@@ -1,0 +1,220 @@
+networks:
+  developlus_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  frontend_dist:
+
+services:
+
+  # ─────────────────────────────────────────────────────────────
+  #  Nginx — Reverse Proxy + Static Frontend
+  # ─────────────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - developlus_net
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  Frontend — React + Vite (build → nginx)
+  # ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend_react
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "3000:80"
+    networks:
+      - developlus_net
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  PostgreSQL 16 + pgvector
+  # ─────────────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-developlus}
+      POSTGRES_USER: ${POSTGRES_USER:-developlus_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_strong_password_123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - developlus_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-developlus_user} -d ${POSTGRES_DB:-developlus}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  Redis 7
+  # ─────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    ports:
+      - "6379:6379"
+    networks:
+      - developlus_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  LiteLLM Proxy — LLM Gateway
+  # ─────────────────────────────────────────────────────────────
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-developlus-litellm-master-key}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+    volumes:
+      - ./services/litellm/config.yaml:/app/config.yaml:ro
+    ports:
+      - "4000:4000"
+    networks:
+      - developlus_net
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "2"]
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  FastAPI — Ana Backend Servisi
+  # ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+      target: development
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-developlus_user}:${POSTGRES_PASSWORD:-change_me_strong_password_123}@postgres:5432/${POSTGRES_DB:-developlus}
+      REDIS_URL: redis://redis:6379/0
+      LITELLM_PROXY_URL: http://litellm:4000
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-developlus-litellm-master-key}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change_me_jwt_secret_key_minimum_32_chars_long}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:3000,http://localhost:5173}
+    volumes:
+      - ./services/api/src:/app/src
+    ports:
+      - "8000:8000"
+    networks:
+      - developlus_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  Celery Worker — Belge İşleme
+  # ─────────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-developlus_user}:${POSTGRES_PASSWORD:-change_me_strong_password_123}@postgres:5432/${POSTGRES_DB:-developlus}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+    networks:
+      - developlus_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A src.celery_app worker --loglevel=info --concurrency=4 -Q default,documents
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  Celery Beat — Zamanlanmış Görevler
+  # ─────────────────────────────────────────────────────────────
+  beat:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    networks:
+      - developlus_net
+    depends_on:
+      - redis
+    command: celery -A src.celery_app beat --loglevel=info
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  Flower — Celery Monitoring Dashboard
+  # ─────────────────────────────────────────────────────────────
+  flower:
+    image: mher/flower:2.0
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/1
+    ports:
+      - "5555:5555"
+    networks:
+      - developlus_net
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────────────
+  #  PgAdmin — Veritabanı Yönetim Arayüzü (opsiyonel)
+  #  Çalıştır: docker compose --profile tools up
+  # ─────────────────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@developlus.ai}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-change_me_pgadmin_password}
+    ports:
+      - "5050:80"
+    networks:
+      - developlus_net
+    profiles:
+      - tools
+    restart: unless-stopped

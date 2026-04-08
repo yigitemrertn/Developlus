@@ -1,0 +1,53 @@
+model_list:
+  - model_name: qwen-turbo
+    litellm_params:
+      model: openai/qwen2.5-72b-instruct
+      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/DASHSCOPE_API_KEY
+      rpm: 60
+      tpm: 500000
+
+  - model_name: qwen-fast
+    litellm_params:
+      model: openai/qwen2.5-7b-instruct
+      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/DASHSCOPE_API_KEY
+      rpm: 100
+      tpm: 1000000
+
+  - model_name: qwen-embedding
+    litellm_params:
+      model: openai/text-embedding-v3
+      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/DASHSCOPE_API_KEY
+
+router_settings:
+  routing_strategy: least-busy
+  fallbacks:
+    - qwen-turbo: ["qwen-fast"]
+  num_retries: 3
+  timeout: 60
+  retry_after: 5
+
+litellm_settings:
+  # Redis semantic cache
+  cache: true
+  cache_params:
+    type: redis
+    host: redis
+    port: 6379
+    db: 3
+    ttl: 3600
+    supported_call_types: ["acompletion", "completion"]
+
+  # Token sayımı
+  request_timeout: 120
+  drop_params: true
+
+  # Cost tracking
+  success_callback: []
+  failure_callback: []
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_connection_pool_limit: 100
