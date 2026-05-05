@@ -128,6 +128,133 @@ class DocumentResponse(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  PROJECT SCHEMAS — Sol çubuk proje listesi + proje CRUD işlemleri
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ProjectCreate(BaseModel):
+    """Yeni proje oluşturma isteği. project_name zorunlu, description opsiyonel."""
+    project_name: str = Field(min_length=1, max_length=255)
+    description: Optional[str] = None
+
+
+class ProjectUpdate(BaseModel):
+    """Kısmi güncelleme: yalnızca gönderilen alanlar değiştirilir (PATCH semantiği)."""
+    project_name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    # 'archived' → projeyi salt-okunur moda alır; 'active' → tekrar aktif eder
+    status: Optional[str] = Field(default=None, pattern=r"^(active|archived)$")
+
+
+class ProjectResponse(BaseModel):
+    """Sol çubuk kart ve proje detay sayfası için API yanıtı."""
+    id: UUID
+    user_id: UUID
+    project_name: str
+    description: Optional[str]
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  SURVEY SCHEMAS — Proje oluşturma sihirbazı teknik kısıt verileri
+# ─────────────────────────────────────────────────────────────────────────────
+
+class SurveySubmit(BaseModel):
+    """
+    Anket yanıtlarını gönderir. responses dict JSONB sütununa yazılır.
+    Örnek responses:
+      {
+        "expected_traffic": "high",
+        "monthly_budget_usd": 500,
+        "team_size": 3,
+        "team_skills": ["Python", "React"],
+        "deployment_preference": "cloud",
+        "has_mobile": true,
+        "compliance_needs": ["GDPR"]
+      }
+    """
+    responses: dict  # Şema-bağımsız; JSONB esnekliğini Python tarafında da korur
+
+
+class SurveyResponse(BaseModel):
+    """Anket verilerini döndürür; frontend sihirbazı son adımı görüntülemek için kullanır."""
+    id: UUID
+    project_id: UUID
+    responses: dict
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  CHAT HISTORY SCHEMAS — Sağ panel "Chat" sekmesi (proje bazlı)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ProjectChatRequest(BaseModel):
+    """
+    Kullanıcının proje bazlı chat paneline gönderdiği mesaj.
+    model override opsiyoneldir; belirtilmezse servis varsayılanı kullanılır.
+    """
+    message: str = Field(min_length=1, max_length=32000)
+    model: Optional[str] = None    # Opsiyonel model override (örn: 'qwen-plus')
+    temperature: Optional[float] = Field(default=None, ge=0.0, le=2.0)
+
+
+class ChatHistoryItemResponse(BaseModel):
+    """Tek bir mesaj satırının API yanıtı."""
+    id: UUID
+    project_id: UUID
+    role: str                        # 'user' | 'assistant' | 'system'
+    message_content: str
+    total_tokens: Optional[int]
+    latency_ms: Optional[int]
+    model_used: Optional[str]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ChatHistoryListResponse(BaseModel):
+    """Projenin tüm mesaj geçmişi; sayfalama bilgisiyle birlikte döner."""
+    project_id: UUID
+    messages: List[ChatHistoryItemResponse]
+    total_count: int = 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  STACK RECOMMENDATION SCHEMAS — Sağ panel "Stack" sekmesi (4 kutu)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class StackRecommendationResponse(BaseModel):
+    """
+    Stack sekmesindeki 4 kutunun içeriği.
+    version alanı geçmiş versiyonlar arasında gezinmek için kullanılır.
+    """
+    id: UUID
+    project_id: UUID
+    version: int                     # 1, 2, 3 ... en yüksek = güncel öneri
+    frontend_content: Optional[str]  # Frontend kutusu
+    backend_content: Optional[str]   # Backend kutusu
+    database_content: Optional[str]  # Database kutusu
+    devops_content: Optional[str]    # DevOps kutusu
+    generated_from: Optional[dict]   # Hangi survey yanıtlarından üretildi
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class StackRecommendationListResponse(BaseModel):
+    """Projenin tüm öneri versiyonlarını listeler; geçmiş versiyonlar için kullanılır."""
+    project_id: UUID
+    recommendations: List[StackRecommendationResponse]
+    latest_version: int = 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  GENERIC
 # ─────────────────────────────────────────────────────────────────────────────
 

@@ -1,59 +1,84 @@
-import { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import HowItWorks from './components/HowItWorks';
-import Features from './components/Features';
-import Dashboard from './components/Dashboard';
-import ChatPanel from './components/ChatPanel';
-import Footer from './components/Footer';
-import { analyzeProject } from './api/analyzeApi';
+import { useState } from 'react';
+import Sidebar from './components/Sidebar';
+import ChatView from './components/ChatView';
+import StackView from './components/StackView';
+import { mockProjects, mockChatHistory, mockStackRecommendations } from './data/mockData';
 
 export default function App() {
-  const [page, setPage] = useState('landing'); // 'landing' | 'dashboard'
-  const [results, setResults] = useState([]);
-  const [prompt, setPrompt] = useState('');
+  const [projects, setProjects] = useState(mockProjects);
+  const [activeProjectId, setActiveProjectId] = useState(mockProjects[0]?.id || null);
+  const [activeView, setActiveView] = useState('chat'); // 'chat' | 'stack'
 
-  // Scroll to top on page change
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [page]);
+  const [chatHistories, setChatHistories] = useState(mockChatHistory);
+  const [stackRecs, setStackRecs] = useState(mockStackRecommendations);
 
-  async function handleAnalyze(input) {
-    setPrompt(input);
-    const data = await analyzeProject(input);
-    setResults(data);
-    setPage('dashboard');
-  }
+  const activeProject = projects.find(p => p.id === activeProjectId);
+  const currentChatHistory = chatHistories[activeProjectId] || [];
+  const currentStack = stackRecs[activeProjectId] || null;
 
-  function handleBack() {
-    setPage('landing');
-  }
+  const handleSendMessage = (projectId, message) => {
+    // Mock ekleme işlemi
+    const newMsg = { id: Date.now().toString(), role: 'user', content: message };
+    setChatHistories(prev => ({
+      ...prev,
+      [projectId]: [...(prev[projectId] || []), newMsg]
+    }));
+
+    // Mock AI cevabı
+    setTimeout(() => {
+      const reply = { id: (Date.now() + 1).toString(), role: 'assistant', content: "Bu mock bir cevaptır. Arka plan bağlandığında gerçek LLM yanıtı buraya gelecek." };
+      setChatHistories(prev => ({
+        ...prev,
+        [projectId]: [...(prev[projectId] || []), reply]
+      }));
+    }, 1000);
+  };
+
+  const handleNewProject = () => {
+    const newId = `p${Date.now()}`;
+    const newProj = { id: newId, name: `Yeni Proje ${projects.length + 1}`, createdAt: new Date().toISOString() };
+    setProjects([newProj, ...projects]);
+    setActiveProjectId(newId);
+    setActiveView('chat');
+  };
 
   return (
-    <div className="app-root" id="appRoot">
+    <div className="app-root app-layout" id="appRoot">
       <div className="noise-overlay" />
+      <div className="glow-orb glow-1" />
       <div className="glow-orb glow-2" />
+      <div className="glow-orb glow-3" />
 
-      <Navbar onHomeClick={handleBack} />
+      <Sidebar 
+        projects={projects}
+        activeProjectId={activeProjectId}
+        activeView={activeView}
+        onProjectSelect={setActiveProjectId}
+        onViewSelect={setActiveView}
+        onNewProject={handleNewProject}
+      />
 
-      {page === 'landing' && (
-        <>
-          <Hero onAnalyze={handleAnalyze} />
-          <HowItWorks />
-          <Features />
-          <Footer />
-        </>
-      )}
-
-      {page === 'dashboard' && (
-        <Dashboard
-          results={results}
-          prompt={prompt}
-          onBack={handleBack}
-        />
-      )}
-
-      <ChatPanel />
+      <main className="main-content">
+        {activeProjectId ? (
+          activeView === 'chat' ? (
+            <ChatView 
+              project={activeProject} 
+              chatHistory={currentChatHistory} 
+              onSendMessage={handleSendMessage} 
+            />
+          ) : (
+            <StackView 
+              project={activeProject} 
+              recommendations={currentStack} 
+            />
+          )
+        ) : (
+          <div className="empty-app-state glass">
+            <h2>Hoş Geldiniz</h2>
+            <p>Başlamak için sol menüden "Yeni Projeye Başla" butonuna tıklayın veya mevcut bir projeyi seçin.</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
