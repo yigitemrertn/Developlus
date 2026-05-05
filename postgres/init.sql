@@ -123,6 +123,9 @@ CREATE TABLE IF NOT EXISTS project_survey_data (
     project_id  UUID NOT NULL UNIQUE REFERENCES projects(id) ON DELETE CASCADE,
     -- Tüm anket yanıtları esnek JSONB yapısında tutulur
     responses   JSONB NOT NULL DEFAULT '{}',
+    -- Anket akışı durumu ve aktif soru
+    question    VARCHAR(30),
+    survey_complete BOOLEAN DEFAULT FALSE,
     created_at  TIMESTAMPTZ DEFAULT NOW(),   -- İlk anket doldurulma zamanı
     updated_at  TIMESTAMPTZ DEFAULT NOW()    -- Sonraki güncellemelerde trigger devreye girer
 );

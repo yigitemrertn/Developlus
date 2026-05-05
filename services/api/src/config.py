@@ -3,9 +3,9 @@ Developlus API — Global Configuration
 Tüm ortam değişkenleri Pydantic Settings ile tip-güvenli okunur.
 """
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,9 +37,14 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "fallback-secret-change-in-production"
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
-    jwt_refresh_token_expire_days: int = 7
+    jwt_refresh_token_expire_days: int = Field(default=7, description="JWT refresh token geçerlilik süresi (gün)")
+    
+    # ─── Security ─────────────────────────────────────────────────────────────
+    # HuggingFace API key şifrelemek için 32 byte base64 fernet key:
+    # Python'da üretmek için: from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())
+    hf_encryption_key: Optional[str] = Field(default=None, description="HF API keylerini şifrelemek için Fernet anahtarı")
 
-    # LiteLLM Proxy
+    # ─── AI / LLM ─────────────────────────────────────────────────────────────
     litellm_proxy_url: str = "http://localhost:4000"
     litellm_master_key: str = "sk-developlus-litellm-master-key"
 
@@ -52,7 +57,7 @@ class Settings(BaseSettings):
     default_max_tokens: int = 4096
 
     # CORS
-    cors_origins: str = "http://localhost,http://localhost:3000"
+    cors_origins: str = "http://localhost,http://localhost:3000,http://localhost:5173,http://localhost:5174"
 
     @field_validator("cors_origins", mode="before")
     @classmethod

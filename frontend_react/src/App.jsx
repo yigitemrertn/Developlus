@@ -10,7 +10,7 @@ import { mockProjects, mockChatHistory, mockStackRecommendations } from './data/
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [projects, setProjects] = useState(mockProjects.map(p => ({ ...p, surveyCompleted: true })));
+  const [projects, setProjects] = useState([]);
   const [activeProjectId, setActiveProjectId] = useState(null);
   const [activeView, setActiveView] = useState('projects'); // 'chat' | 'stack' | 'survey' | 'projects' | 'settings'
 

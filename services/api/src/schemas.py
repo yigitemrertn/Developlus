@@ -152,6 +152,7 @@ class ProjectResponse(BaseModel):
     project_name: str
     description: Optional[str]
     status: str
+    survey_complete: Optional[bool] = False
     created_at: datetime
     updated_at: datetime
 
@@ -177,6 +178,8 @@ class SurveySubmit(BaseModel):
       }
     """
     responses: dict  # Şema-bağımsız; JSONB esnekliğini Python tarafında da korur
+    question: Optional[str] = None
+    survey_complete: bool = False
 
 
 class SurveyResponse(BaseModel):
@@ -184,6 +187,8 @@ class SurveyResponse(BaseModel):
     id: UUID
     project_id: UUID
     responses: dict
+    question: Optional[str] = None
+    survey_complete: bool = False
     created_at: datetime
     updated_at: datetime
 

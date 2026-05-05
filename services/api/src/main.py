@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from src.config import settings
-from src.routers import analyze, auth, chat, health, rag
+from src.routers import analyze, auth, chat, health, rag, projects, users
 
 
 @asynccontextmanager
@@ -43,6 +43,8 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(rag.router)
 app.include_router(analyze.router)  # Frontend uyumlu: /analyze ve /chat
+app.include_router(projects.router)
+app.include_router(users.router)
 
 
 @app.get("/")

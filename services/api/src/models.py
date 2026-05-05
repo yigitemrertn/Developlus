@@ -123,6 +123,8 @@ class ProjectSurveyData(Base):
                         nullable=False, unique=True)
     # Tüm anket yanıtları esnek JSONB yapısında (traffic, budget, skills vb.)
     responses  = Column(JSONB, nullable=False, default=dict)
+    question   = Column(String(30))
+    survey_complete = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

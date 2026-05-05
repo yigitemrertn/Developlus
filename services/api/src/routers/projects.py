@@ -1,0 +1,114 @@
+"""Developlus API — Projects Router"""
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+from src.dependencies import CurrentUser, DBSession
+from src.models import Project, ProjectSurveyData
+from src.schemas import ProjectCreate, ProjectResponse, SuccessResponse
+
+router = APIRouter(prefix="/projects", tags=["Projects"])
+
+
+@router.get("", response_model=List[ProjectResponse])
+async def list_projects(current_user: CurrentUser, db: DBSession):
+    """
+    Kullanıcıya ait tüm projeleri listeler.
+    Her projenin anket (survey_complete) durumunu da dahil eder.
+    """
+    result = await db.execute(
+        select(Project)
+        .options(selectinload(Project.survey_data))
+        .where(Project.user_id == current_user.id)
+        .order_by(Project.created_at.desc())
+    )
+    projects = result.scalars().all()
+    
+    response_list = []
+    for proj in projects:
+        # Pydantic schema validation için projeyi dict benzeri objeye çevirmiyoruz,
+        # ancak survey_complete dinamik özelliğini Pydantic model dump sırasında yakalaması için
+        # objeye monkey-patch yapıyoruz veya dict üzerinden Pydantic build edebiliriz.
+        # En temizi, yeni bir dict oluşturarak ProjectResponse'a parse etmektir.
+        survey_complete = False
+        if proj.survey_data:
+            survey_complete = proj.survey_data.survey_complete
+            
+        proj_dict = {
+            "id": proj.id,
+            "user_id": proj.user_id,
+            "project_name": proj.project_name,
+            "description": proj.description,
+            "status": proj.status,
+            "survey_complete": survey_complete,
+            "created_at": proj.created_at,
+            "updated_at": proj.updated_at
+        }
+        response_list.append(proj_dict)
+        
+    return response_list
+
+
+@router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+async def create_project(data: ProjectCreate, current_user: CurrentUser, db: DBSession):
+    """
+    Yeni bir proje oluşturur.
+    Proje oluşturulurken otomatik olarak boş bir anket verisi de oluşturulur.
+    """
+    new_project = Project(
+        user_id=current_user.id,
+        project_name=data.project_name,
+        description=data.description
+    )
+    db.add(new_project)
+    await db.flush()  # ID almak için
+    
+    # Anket kaydını başlat
+    survey_data = ProjectSurveyData(
+        project_id=new_project.id,
+        responses={}
+    )
+    db.add(survey_data)
+    
+    await db.commit()
+    await db.refresh(new_project)
+    
+    return {
+        "id": new_project.id,
+        "user_id": new_project.user_id,
+        "project_name": new_project.project_name,
+        "description": new_project.description,
+        "status": new_project.status,
+        "survey_complete": False,
+        "created_at": new_project.created_at,
+        "updated_at": new_project.updated_at
+    }
+
+
+@router.delete("/{project_id}", response_model=SuccessResponse)
+async def delete_project(project_id: UUID, current_user: CurrentUser, db: DBSession):
+    """
+    Belirtilen projeyi siler.
+    DB seviyesinde CASCADE olduğundan anketler, mesajlar vb. her şey silinecek.
+    """
+    result = await db.execute(
+        select(Project).where(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
+    )
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Proje bulunamadı veya silme yetkiniz yok"
+        )
+        
+    await db.delete(project)
+    await db.commit()
+    
+    return SuccessResponse(message="Proje başarıyla silindi")
