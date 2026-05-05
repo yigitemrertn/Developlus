@@ -23,8 +23,8 @@ export default function ChatView({ project, chatHistory, onSendMessage }) {
   return (
     <div className="view-container chat-view glass">
       <div className="view-header">
-        <h2>{project?.name || 'Proje Seçilmedi'} - Chat</h2>
-        <p className="subtitle">Mimari ve teknik kararlar için danışın</p>
+        <h2>{project?.name || 'No Project Selected'} - Chat</h2>
+        <p className="subtitle">Consult for architectural and technical decisions</p>
       </div>
 
       <div className="chat-messages-container">
@@ -46,8 +46,8 @@ export default function ChatView({ project, chatHistory, onSendMessage }) {
         ) : (
           <div className="empty-state">
             <Bot size={48} className="empty-icon" />
-            <h3>Henüz mesaj yok</h3>
-            <p>Projeye dair aklınızdaki soruları aşağıdan sorabilirsiniz.</p>
+            <h3>No messages yet</h3>
+            <p>You can ask your questions about the project below.</p>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -57,7 +57,7 @@ export default function ChatView({ project, chatHistory, onSendMessage }) {
         <form onSubmit={handleSend} className="chat-input-form">
           <input
             type="text"
-            placeholder="Kullanıcı mesajı buraya girilecek..."
+            placeholder="Type your message here..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={!project}

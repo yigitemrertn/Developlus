@@ -1,7 +1,7 @@
 export const mockProjects = [
   {
     id: 'p1',
-    name: 'E-Ticaret Platformu',
+    name: 'E-Commerce Platform',
     createdAt: '2023-10-24T10:00:00Z',
   },
   {
@@ -11,45 +11,45 @@ export const mockProjects = [
   },
   {
     id: 'p3',
-    name: 'Sosyal Medya Analitik',
+    name: 'Social Media Analytics',
     createdAt: '2023-10-26T09:15:00Z',
   }
 ];
 
 export const mockChatHistory = {
   p1: [
-    { id: 'm1', role: 'user', content: 'Yüksek trafikli bir e-ticaret sitesi için mimari nasıl olmalı?' },
-    { id: 'm2', role: 'assistant', content: 'Yüksek trafik için mikroservis mimarisi veya yatay ölçeklenebilir bir monolit öneririm. Caching (Redis) ve CDN kullanımı şarttır.' },
-    { id: 'm3', role: 'user', content: 'Veritabanı olarak ne seçmeliyim?' },
-    { id: 'm4', role: 'assistant', content: 'İlişkisel veriler (sipariş, sepet, kullanıcı) için PostgreSQL, ürün kataloğu arama (full-text search) için Elasticsearch, session ve sepet geçiciliği için Redis iyi bir üçlüdür.' }
+    { id: 'm1', role: 'user', content: 'What should the architecture be for a high-traffic e-commerce site?' },
+    { id: 'm2', role: 'assistant', content: 'I recommend a microservices architecture or a horizontally scalable monolith for high traffic. Caching (Redis) and CDN usage are essential.' },
+    { id: 'm3', role: 'user', content: 'What should I choose for the database?' },
+    { id: 'm4', role: 'assistant', content: 'PostgreSQL for relational data (orders, cart, users), Elasticsearch for product catalog search (full-text search), and Redis for session and cart ephemerality are a good trio.' }
   ],
   p2: [
-    { id: 'm1', role: 'user', content: 'Bankacılık API\'leri ile entegre olacak bir dashboard yapıyoruz. Güvenlik önlemleri neler olmalı?' },
-    { id: 'm2', role: 'assistant', content: 'Fintech projelerinde güvenlik 1 numaralı önceliktir. OAuth 2.0 / OIDC, mTLS (Mutual TLS), veritabanı şifreleme (Data at rest), PCI-DSS uyumluluğu ve sıkı Rate Limiting gereklidir.' }
+    { id: 'm1', role: 'user', content: "We are building a dashboard that will integrate with Banking APIs. What should the security measures be?" },
+    { id: 'm2', role: 'assistant', content: 'Security is the number 1 priority in Fintech projects. OAuth 2.0 / OIDC, mTLS (Mutual TLS), database encryption (Data at rest), PCI-DSS compliance, and strict Rate Limiting are required.' }
   ],
   p3: [
-    { id: 'm1', role: 'user', content: 'Günde milyonlarca tweet analiz etmemiz gerekiyor.' },
-    { id: 'm2', role: 'assistant', content: 'Bu bir big data problemi. Veri akışı için Apache Kafka, veri işleme için Apache Spark veya Flink, analitik sorgular için ClickHouse veya BigQuery kullanabilirsiniz.' }
+    { id: 'm1', role: 'user', content: 'We need to analyze millions of tweets a day.' },
+    { id: 'm2', role: 'assistant', content: 'This is a big data problem. You can use Apache Kafka for data streaming, Apache Spark or Flink for data processing, and ClickHouse or BigQuery for analytical queries.' }
   ]
 };
 
 export const mockStackRecommendations = {
   p1: {
-    frontend: "- React veya Next.js\n- Tailwind CSS\n- State yönetimi için Redux Toolkit veya Zustand\n\nNeden: Next.js SSR (Server Side Rendering) desteği ile SEO için mükemmeldir, e-ticaret için bu kritiktir.",
-    backend: "- Node.js (Express/NestJS) veya Python (FastAPI)\n- GraphQL veya REST API\n\nNeden: Mikroservis mimarisine geçişte parçalanması kolay, hafif framework'ler.",
-    database: "- Primary DB: PostgreSQL\n- Cache & Session: Redis\n- Search: Elasticsearch\n\nNeden: ACID uyumluluğu e-ticaret (ödeme) için zorunludur. Redis hızı artırır.",
-    devops: "- Docker & Kubernetes (K8s)\n- CI/CD: GitHub Actions veya GitLab CI\n- Cloud: AWS (EKS, RDS)\n\nNeden: Yüksek trafikte otomatik ölçeklenme (auto-scaling) için K8s endüstri standardıdır."
+    frontend: "- React or Next.js\n- Tailwind CSS\n- Redux Toolkit or Zustand for state management\n\nWhy: Next.js SSR (Server Side Rendering) support is excellent for SEO, critical for e-commerce.",
+    backend: "- Node.js (Express/NestJS) or Python (FastAPI)\n- GraphQL or REST API\n\nWhy: Lightweight frameworks that are easy to decouple when transitioning to a microservices architecture.",
+    database: "- Primary DB: PostgreSQL\n- Cache & Session: Redis\n- Search: Elasticsearch\n\nWhy: ACID compliance is mandatory for e-commerce (payments). Redis increases speed.",
+    devops: "- Docker & Kubernetes (K8s)\n- CI/CD: GitHub Actions or GitLab CI\n- Cloud: AWS (EKS, RDS)\n\nWhy: K8s is the industry standard for auto-scaling under high traffic."
   },
   p2: {
-    frontend: "- React\n- Material-UI veya Ant Design\n- Chart.js veya Recharts\n\nNeden: Dashboard arayüzleri için zengin komponent kütüphaneleri hız kazandırır.",
-    backend: "- Java (Spring Boot) veya C# (.NET Core)\n\nNeden: Kurumsal finans firmalarının çoğu Java/.NET ekosistemine güvenir, güvenlik kütüphaneleri çok olgundur.",
-    database: "- PostgreSQL (veya Oracle)\n- Zaman Serisi Verileri için: TimescaleDB\n\nNeden: Finansal işlemler için katı bütünlük kuralları gerekir.",
-    devops: "- On-premise veya Private Cloud\n- HashiCorp Vault (Secret yönetimi)\n\nNeden: Fintech regülasyonları verinin yurt dışına çıkmasını veya public cloud'da durmasını kısıtlayabilir."
+    frontend: "- React\n- Material-UI or Ant Design\n- Chart.js or Recharts\n\nWhy: Rich component libraries save time for dashboard interfaces.",
+    backend: "- Java (Spring Boot) or C# (.NET Core)\n\nWhy: Most corporate finance firms rely on the Java/.NET ecosystem, security libraries are very mature.",
+    database: "- PostgreSQL (or Oracle)\n- For Time Series Data: TimescaleDB\n\nWhy: Strict integrity rules are required for financial transactions.",
+    devops: "- On-premise or Private Cloud\n- HashiCorp Vault (Secret management)\n\nWhy: Fintech regulations may restrict data from leaving the country or staying on a public cloud."
   },
   p3: {
-    frontend: "- Vue.js veya React\n- D3.js (İleri düzey görselleştirme)\n\nNeden: Çok fazla canlı veri akışı olacağı için render performansı önemlidir.",
-    backend: "- Go (Golang) veya Rust\n- Apache Kafka (Message Queue)\n\nNeden: Milyonlarca veriyi işlerken Go'nun concurrency modeli ve düşük bellek tüketimi avantaj sağlar.",
-    database: "- ClickHouse veya Apache Druid\n- MongoDB (metadata için)\n\nNeden: OLAP (Online Analytical Processing) sistemleri devasa verilerde milisaniyelik analizler yapabilir.",
-    devops: "- AWS EMR veya Google Cloud Dataflow\n- Terraform (IaC)\n\nNeden: Big data altyapısını yönetmek zordur, managed servisler (yönetilen hizmetler) iş yükünü azaltır."
+    frontend: "- Vue.js or React\n- D3.js (Advanced visualization)\n\nWhy: Render performance is important as there will be a lot of live data streaming.",
+    backend: "- Go (Golang) or Rust\n- Apache Kafka (Message Queue)\n\nWhy: Go's concurrency model and low memory footprint provide an advantage when processing millions of data points.",
+    database: "- ClickHouse or Apache Druid\n- MongoDB (for metadata)\n\nWhy: OLAP (Online Analytical Processing) systems can perform millisecond analysis on massive datasets.",
+    devops: "- AWS EMR or Google Cloud Dataflow\n- Terraform (IaC)\n\nWhy: Managing big data infrastructure is difficult, managed services reduce the workload."
   }
 };

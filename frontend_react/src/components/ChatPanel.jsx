@@ -4,7 +4,7 @@ import { sendChatMessage } from '../api/analyzeApi';
 
 const INITIAL_MESSAGE = {
   role: 'ai',
-  text: 'Merhaba! 👋 Ben Developlus AI asistanıyım. Proje fikrinle ilgili sorularını yanıtlayabilirim.'
+  text: 'Hello! 👋 I am the Developlus AI assistant. I can answer questions about your project idea.'
 };
 
 export default function ChatPanel() {
@@ -38,7 +38,7 @@ export default function ChatPanel() {
         className="chat-toggle"
         id="chatToggle"
         onClick={() => setIsOpen(prev => !prev)}
-        aria-label="Chat aç/kapat"
+        aria-label="Toggle Chat"
       >
         <MessageCircle size={24} />
       </button>
@@ -46,7 +46,7 @@ export default function ChatPanel() {
       <div className={`chat-panel ${isOpen ? 'open' : 'closed'}`} id="chatPanel">
         <div className="chat-header">
           <div className="dot" />
-          <span>Developlus AI Asistan</span>
+          <span>Developlus AI Assistant</span>
         </div>
 
         <div className="chat-messages" id="chatMessages">
@@ -69,12 +69,12 @@ export default function ChatPanel() {
               <input
                 type="text"
                 id="chatInput"
-                placeholder="Bir soru sor..."
+                placeholder="Ask a question..."
                 autoComplete="off"
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
               />
-              <button type="submit" className="chat-send-btn" aria-label="Gönder">
+              <button type="submit" className="chat-send-btn" aria-label="Send">
                 <Send size={16} />
               </button>
             </div>

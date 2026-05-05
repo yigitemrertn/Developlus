@@ -26,7 +26,7 @@ export default function App() {
 
     // Mock AI cevabı
     setTimeout(() => {
-      const reply = { id: (Date.now() + 1).toString(), role: 'assistant', content: "Bu mock bir cevaptır. Arka plan bağlandığında gerçek LLM yanıtı buraya gelecek." };
+      const reply = { id: (Date.now() + 1).toString(), role: 'assistant', content: "This is a mock response. When the backend is connected, the real LLM response will appear here." };
       setChatHistories(prev => ({
         ...prev,
         [projectId]: [...(prev[projectId] || []), reply]
@@ -36,7 +36,7 @@ export default function App() {
 
   const handleNewProject = () => {
     const newId = `p${Date.now()}`;
-    const newProj = { id: newId, name: `Yeni Proje ${projects.length + 1}`, createdAt: new Date().toISOString() };
+    const newProj = { id: newId, name: `New Project ${projects.length + 1}`, createdAt: new Date().toISOString() };
     setProjects([newProj, ...projects]);
     setActiveProjectId(newId);
     setActiveView('chat');
@@ -74,8 +74,8 @@ export default function App() {
           )
         ) : (
           <div className="empty-app-state glass">
-            <h2>Hoş Geldiniz</h2>
-            <p>Başlamak için sol menüden "Yeni Projeye Başla" butonuna tıklayın veya mevcut bir projeyi seçin.</p>
+            <h2>Welcome</h2>
+            <p>Click the "Start New Project" button on the left menu or select an existing project to begin.</p>
           </div>
         )}
       </main>

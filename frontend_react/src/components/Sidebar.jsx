@@ -11,7 +11,7 @@ export default function Sidebar({ projects, activeProjectId, activeView, onProje
       <div className="sidebar-content">
         <button className="new-project-btn" onClick={onNewProject}>
           <PlusCircle size={18} />
-          <span>Yeni Projeye Başla</span>
+          <span>Start New Project</span>
         </button>
 
         <div className="project-list">
@@ -26,7 +26,7 @@ export default function Sidebar({ projects, activeProjectId, activeView, onProje
                   onClick={() => { onProjectSelect(proj.id); onViewSelect('chat'); }}
                 >
                   <MessageSquare size={14} />
-                  <span>Chat Görünümü</span>
+                  <span>Chat View</span>
                 </button>
                 <div className="action-divider"></div>
                 <button 
@@ -34,7 +34,7 @@ export default function Sidebar({ projects, activeProjectId, activeView, onProje
                   onClick={() => { onProjectSelect(proj.id); onViewSelect('stack'); }}
                 >
                   <Layers size={14} />
-                  <span>Stack Görünümü</span>
+                  <span>Stack View</span>
                 </button>
               </div>
             </div>
