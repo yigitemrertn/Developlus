@@ -2,12 +2,17 @@ import { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatView from './components/ChatView';
 import StackView from './components/StackView';
+import SurveyView from './components/SurveyView';
+import AuthView from './components/AuthView';
+import ProjectsView from './components/ProjectsView';
+import SettingsView from './components/SettingsView';
 import { mockProjects, mockChatHistory, mockStackRecommendations } from './data/mockData';
 
 export default function App() {
-  const [projects, setProjects] = useState(mockProjects);
-  const [activeProjectId, setActiveProjectId] = useState(mockProjects[0]?.id || null);
-  const [activeView, setActiveView] = useState('chat'); // 'chat' | 'stack'
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [projects, setProjects] = useState(mockProjects.map(p => ({ ...p, surveyCompleted: true })));
+  const [activeProjectId, setActiveProjectId] = useState(null);
+  const [activeView, setActiveView] = useState('projects'); // 'chat' | 'stack' | 'survey' | 'projects' | 'settings'
 
   const [chatHistories, setChatHistories] = useState(mockChatHistory);
   const [stackRecs, setStackRecs] = useState(mockStackRecommendations);
@@ -35,12 +40,41 @@ export default function App() {
   };
 
   const handleNewProject = () => {
-    const newId = `p${Date.now()}`;
-    const newProj = { id: newId, name: `New Project ${projects.length + 1}`, createdAt: new Date().toISOString() };
-    setProjects([newProj, ...projects]);
-    setActiveProjectId(newId);
-    setActiveView('chat');
+    setActiveProjectId(null);
+    setActiveView('survey');
   };
+
+  const handleDeleteProject = (id) => {
+    setProjects(projects.filter(p => p.id !== id));
+    if (activeProjectId === id) {
+      setActiveProjectId(null);
+      setActiveView('projects');
+    }
+  };
+
+  const handleSurveyComplete = (answers) => {
+    const projName = answers.projectName || `New Project ${projects.length + 1}`;
+    
+    if (activeProjectId) {
+      // Updating existing project survey
+      const updatedProjects = projects.map(p => 
+        p.id === activeProjectId ? { ...p, surveyCompleted: true, name: projName } : p
+      );
+      setProjects(updatedProjects);
+      setActiveView('chat');
+    } else {
+      // Creating new project
+      const newId = `p${Date.now()}`;
+      const newProj = { id: newId, name: projName, createdAt: new Date().toISOString(), surveyCompleted: true };
+      setProjects([newProj, ...projects]);
+      setActiveProjectId(newId);
+      setActiveView('chat');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return <AuthView onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="app-root app-layout" id="appRoot">
@@ -56,6 +90,7 @@ export default function App() {
         onProjectSelect={setActiveProjectId}
         onViewSelect={setActiveView}
         onNewProject={handleNewProject}
+        onGoHome={() => { setActiveProjectId(null); setActiveView('chat'); }}
       />
 
       <main className="main-content">
@@ -65,6 +100,7 @@ export default function App() {
               project={activeProject} 
               chatHistory={currentChatHistory} 
               onSendMessage={handleSendMessage} 
+              onGoToSurvey={() => setActiveView('survey')}
             />
           ) : (
             <StackView 
@@ -72,11 +108,21 @@ export default function App() {
               recommendations={currentStack} 
             />
           )
+        ) : activeView === 'survey' ? (
+          <SurveyView 
+            onComplete={handleSurveyComplete} 
+            existingProject={activeProject} 
+          />
+        ) : activeView === 'settings' ? (
+          <SettingsView />
         ) : (
-          <div className="empty-app-state glass">
-            <h2>Welcome</h2>
-            <p>Click the "Start New Project" button on the left menu or select an existing project to begin.</p>
-          </div>
+          <ProjectsView 
+            projects={projects}
+            onProjectSelect={setActiveProjectId}
+            onViewSelect={setActiveView}
+            onNewProject={handleNewProject}
+            onDeleteProject={handleDeleteProject}
+          />
         )}
       </main>
     </div>

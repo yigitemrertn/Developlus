@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User } from 'lucide-react';
 
-export default function ChatView({ project, chatHistory, onSendMessage }) {
+export default function ChatView({ project, chatHistory, onSendMessage, onGoToSurvey }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -22,9 +22,16 @@ export default function ChatView({ project, chatHistory, onSendMessage }) {
 
   return (
     <div className="view-container chat-view glass">
-      <div className="view-header">
-        <h2>{project?.name || 'No Project Selected'} - Chat</h2>
-        <p className="subtitle">Consult for architectural and technical decisions</p>
+      <div className="view-header flex-between">
+        <div>
+          <h2>{project?.name || 'No Project Selected'} - Chat</h2>
+          <p className="subtitle">Consult for architectural and technical decisions</p>
+        </div>
+        {project && (
+          <button className="survey-nav-btn secondary" onClick={onGoToSurvey}>
+            <span>Review Survey</span>
+          </button>
+        )}
       </div>
 
       <div className="chat-messages-container">
