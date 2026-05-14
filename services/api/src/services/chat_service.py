@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import ChatSession, Message
+from src.models import ChatSession, Message, ChatHistory, Project
 from src.schemas import SessionCreate, SessionUpdate
 from src.services import cache_service, llm_service, tavily_service
 
@@ -211,3 +211,109 @@ async def stream_chat(
 
     # Cache'i geçersiz kıl → bir sonraki istekte yeniden yüklenecek
     await cache_service.cache_delete(cache_service.session_history_key(str(session.id))) # type: ignore
+
+
+async def get_project_messages(db: AsyncSession, project_id: UUID) -> List[ChatHistory]:
+    """Proje bazlı mesaj geçmişini döner."""
+    result = await db.execute(
+        select(ChatHistory)
+        .where(ChatHistory.project_id == project_id)
+        .order_by(ChatHistory.created_at)
+    )
+    return list(result.scalars().all())
+
+
+async def stream_project_chat(
+    db: AsyncSession,
+    project_id: UUID,
+    user_message: str,
+    extra_context: str = "",
+) -> AsyncGenerator[str, None]:
+    """SSE streaming for Project-specific chat history with Agentic RAG."""
+    import time
+    print(f"DEBUG: stream_project_chat started for project_id: {project_id}")
+    
+    # 1. Kullanıcı mesajını kaydet
+    user_msg = ChatHistory(
+        project_id=project_id,
+        role="user",
+        message_content=user_message,
+    )
+    db.add(user_msg)
+    await db.flush()
+
+    # 2. Geçmişi al
+    messages = await get_project_messages(db, project_id)
+    history = [{"role": m.role, "content": m.message_content} for m in messages]
+
+    # 3. LLM mesajlarını oluştur (Survey context dahil)
+    llm_messages = await llm_service.build_messages(
+        session_history=history[:-1] if history else [],
+        user_message=user_message,
+        system_prompt=f"Sen bir yazılım mimarı ve teknik danışmansın. Kullanıcının projesine özel teknoloji yığını (stack) önerileri veriyorsun. {extra_context}",
+    )
+
+    tavily_tool = {
+        "type": "function",
+        "function": {
+            "name": "search_web",
+            "description": "Tavily kullanarak internette arama yapar. Yeni teknolojiler, kütüphaneler veya best-practice'ler hakkında güncel bilgi almak için kullan.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Arama sorgusu."}
+                },
+                "required": ["query"]
+            }
+        }
+    }
+
+    # Agentic Loop
+    first_response = await llm_service.chat_completion(
+        messages=llm_messages,
+        tools=[tavily_tool],
+    )
+
+    search_sources = ""
+    if first_response.get("tool_calls"):
+        tool_call = first_response["tool_calls"][0]
+        # Dict veya Object erişimini garantiye alalım
+        tc_name = tool_call.get("function", {}).get("name") if isinstance(tool_call, dict) else tool_call.function.name
+        
+        if tc_name == "search_web":
+            try:
+                tc_args_str = tool_call.get("function", {}).get("arguments") if isinstance(tool_call, dict) else tool_call.function.arguments
+                args = json.loads(tc_args_str)
+                query = args.get("query")
+                yield f"\n\n🔍 **Arama Yapılıyor:** `{query}`\n\n"
+                
+                search_result = await tavily_service.search_web(query)
+                llm_messages.append({"role": "assistant", "content": None, "tool_calls": first_response["tool_calls"]})
+                
+                tc_id = tool_call.get("id") if isinstance(tool_call, dict) else tool_call.id
+                llm_messages.append({"role": "tool", "tool_call_id": tc_id, "name": "search_web", "content": search_result})
+                search_sources = f"\n\n---\n**Kaynak:** Tavily Search (`{query}`)"
+            except Exception as e:
+                print(f"Tool call error: {e}")
+
+    # Streaming Final Response
+    full_response = ""
+    start = time.monotonic()
+    async for token in llm_service.chat_completion_stream(messages=llm_messages):
+        full_response += token
+        yield token
+
+    if search_sources:
+        full_response += search_sources
+        yield search_sources
+
+    # 4. Asistan yanıtını kaydet
+    assistant_msg = ChatHistory(
+        project_id=project_id,
+        role="assistant",
+        message_content=full_response,
+        latency_ms=int((time.monotonic() - start) * 1000),
+        model_used="qwen-turbo"
+    )
+    db.add(assistant_msg)
+    await db.commit()

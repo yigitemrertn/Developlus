@@ -1,14 +1,20 @@
 """Developlus API — Projects Router"""
+import json
 from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import selectinload
 
 from src.dependencies import CurrentUser, DBSession
-from src.models import Project, ProjectSurveyData
-from src.schemas import ProjectCreate, ProjectResponse, SuccessResponse
+from src.models import Project, ProjectSurveyData, ChatHistory
+from src.schemas import (
+    ProjectCreate, ProjectResponse, SuccessResponse,
+    ProjectChatRequest, ChatHistoryListResponse
+)
+from src.services import chat_service
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
@@ -137,3 +143,70 @@ async def delete_project(project_id: UUID, current_user: CurrentUser, db: DBSess
     await db.commit()
 
     return SuccessResponse(message="Proje başarıyla silindi")
+@router.get("/{project_id}/chat", response_model=ChatHistoryListResponse)
+async def get_project_chat(project_id: UUID, current_user: CurrentUser, db: DBSession):
+    """Projenin mesaj geçmişini döner."""
+    # Önce sahiplik kontrolü
+    owner_check = await db.execute(
+        select(Project.id).where(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
+    )
+    if owner_check.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Proje bulunamadı")
+        
+    messages = await chat_service.get_project_messages(db, project_id)
+    return {
+        "project_id": project_id,
+        "messages": messages,
+        "total_count": len(messages)
+    }
+
+@router.post("/{project_id}/chat/stream")
+async def stream_project_chat(
+    project_id: UUID, 
+    request: ProjectChatRequest, 
+    current_user: CurrentUser, 
+    db: DBSession
+):
+    """Proje bazlı AI danışmanlığı — Streaming SSE."""
+    # Sahiplik kontrolü
+    result = await db.execute(
+        select(Project).where(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Proje bulunamadı")
+
+    # Survey verisini de context olarak alalım (opsiyonel ama akıllıca)
+    survey_res = await db.execute(
+        select(ProjectSurveyData).where(ProjectSurveyData.project_id == project_id)
+    )
+    survey = survey_res.scalar_one_or_none()
+    survey_context = ""
+    if survey and survey.responses:
+        survey_context = f"\n\n## Proje Teknik Kısıtları (Anket Yanıtları):\n{json.dumps(survey.responses, ensure_ascii=False)}"
+
+    async def event_generator():
+        try:
+            async for token in chat_service.stream_project_chat(
+                db=db,
+                project_id=project_id,
+                user_message=request.message,
+                extra_context=survey_context
+            ):
+                payload = json.dumps({"token": token}, ensure_ascii=False)
+                yield f"data: {payload}\n\n"
+            yield f"data: {json.dumps({'done': True})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )

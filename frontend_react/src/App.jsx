@@ -61,22 +61,110 @@ export default function App() {
   const currentChatHistory = chatHistories[activeProjectId] || [];
   const currentStack = stackRecs[activeProjectId] || null;
 
-  const handleSendMessage = (projectId, message) => {
-    // Mock ekleme işlemi
-    const newMsg = { id: Date.now().toString(), role: 'user', content: message };
+  // Proje seçildiğinde geçmişi çek
+  useEffect(() => {
+    if (activeProjectId && isAuthenticated) {
+      fetchChatHistory(activeProjectId);
+    }
+  }, [activeProjectId, isAuthenticated]);
+
+  const fetchChatHistory = async (projectId) => {
+    const token = localStorage.getItem('access_token');
+    try {
+      const res = await fetch(`http://localhost:8000/projects/${projectId}/chat`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Backend 'message_content' dönüyor, 'content' olarak mapliyoruz
+        const mapped = data.messages.map(m => ({
+          ...m,
+          content: m.message_content
+        }));
+        setChatHistories(prev => ({ ...prev, [projectId]: mapped }));
+      }
+    } catch (e) {
+      console.error('Chat history error:', e);
+    }
+  };
+
+  const handleSendMessage = async (projectId, message) => {
+    const token = localStorage.getItem('access_token');
+    
+    // 1. Kullanıcı mesajını anında ekrana ekle
+    const userMsg = { id: Date.now().toString(), role: 'user', content: message };
     setChatHistories(prev => ({
       ...prev,
-      [projectId]: [...(prev[projectId] || []), newMsg]
+      [projectId]: [...(prev[projectId] || []), userMsg]
     }));
 
-    // Mock AI cevabı
-    setTimeout(() => {
-      const reply = { id: (Date.now() + 1).toString(), role: 'assistant', content: "This is a mock response. When the backend is connected, the real LLM response will appear here." };
-      setChatHistories(prev => ({
-        ...prev,
-        [projectId]: [...(prev[projectId] || []), reply]
-      }));
-    }, 1000);
+    // 2. Asistan için boş bir balon oluştur
+    const assistantMsgId = (Date.now() + 1).toString();
+    const assistantMsg = { id: assistantMsgId, role: 'assistant', content: '' };
+    setChatHistories(prev => ({
+      ...prev,
+      [projectId]: [...(prev[projectId] || []), userMsg, assistantMsg]
+    }));
+
+    try {
+      const response = await fetch(`http://localhost:8000/projects/${projectId}/chat/stream`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+      });
+
+      if (!response.ok) throw new Error('Stream failed');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.token) {
+                accumulatedContent += data.token;
+                // Ekranda güncelle
+                setChatHistories(prev => {
+                  const history = [...(prev[projectId] || [])];
+                  const lastIdx = history.findIndex(m => m.id === assistantMsgId);
+                  if (lastIdx !== -1) {
+                    history[lastIdx] = { ...history[lastIdx], content: accumulatedContent };
+                  }
+                  return { ...prev, [projectId]: history };
+                });
+              }
+              if (data.done) {
+                console.log('Stream finished');
+              }
+            } catch (e) {
+              // JSON parse hatası olabilir, geç
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Streaming error:', e);
+      setChatHistories(prev => {
+        const history = [...(prev[projectId] || [])];
+        const lastIdx = history.findIndex(m => m.id === assistantMsgId);
+        if (lastIdx !== -1) {
+          history[lastIdx] = { ...history[lastIdx], content: 'Üzgünüm, bir hata oluştu. Lütfen tekrar dene.' };
+        }
+        return { ...prev, [projectId]: history };
+      });
+    }
   };
 
   const handleNewProject = () => {

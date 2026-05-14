@@ -1,12 +1,3 @@
-networks:
-  developlus_net:
-    driver: bridge
-
-volumes:
-  postgres_data:
-  redis_data:
-  frontend_dist:
-
 services:
 
   # ─────────────────────────────────────────────────────────────
@@ -32,14 +23,19 @@ services:
     build:
       context: ./frontend_react
       dockerfile: Dockerfile
+      target: build
       args:
         VITE_API_URL: http://localhost:8000
     ports:
-      - "3000:80"
+      - "3000:5173"
+    volumes:
+      - ./frontend_react:/app
+      - /app/node_modules
     networks:
       - developlus_net
     depends_on:
       - api
+    command: npm run dev -- --host
     restart: unless-stopped
 
   # ─────────────────────────────────────────────────────────────
@@ -128,6 +124,7 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:3000,http://localhost:5173}
+      TAVILY_API_KEY: ${TAVILY_API_KEY}
     volumes:
       - ./services/api/src:/app/src
     ports:
@@ -203,18 +200,27 @@ services:
     restart: unless-stopped
 
   # ─────────────────────────────────────────────────────────────
-  #  PgAdmin — Veritabanı Yönetim Arayüzü (opsiyonel)
-  #  Çalıştır: docker compose --profile tools up
+  #  PgAdmin — Veritabanı Yönetim Arayüzü
   # ─────────────────────────────────────────────────────────────
   pgadmin:
     image: dpage/pgadmin4:latest
+    container_name: developlus-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@developlus.ai}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-change_me_pgadmin_password}
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "5050:80"
     networks:
       - developlus_net
-    profiles:
-      - tools
+    depends_on:
+      - postgres
     restart: unless-stopped
+
+networks:
+  developlus_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  frontend_dist:
