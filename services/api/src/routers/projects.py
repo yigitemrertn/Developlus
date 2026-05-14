@@ -3,7 +3,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import selectinload
 
 from src.dependencies import CurrentUser, DBSession
@@ -88,27 +88,52 @@ async def create_project(data: ProjectCreate, current_user: CurrentUser, db: DBS
     }
 
 
+@router.put("/{project_id}/survey", response_model=SuccessResponse)
+async def update_survey(project_id: UUID, answers: dict, current_user: CurrentUser, db: DBSession):
+    """Projeye ait anket yanıtlarını günceller ve survey_complete=True yapar."""
+    # Önce kullanıcının bu projeye sahip olduğunu doğrula
+    owner_check = await db.execute(
+        select(Project.id).where(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
+    )
+    if owner_check.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Proje anketi bulunamadı")
+
+    # SQL UPDATE — ORM instance'a atama yok, Column descriptor hatası yok
+    await db.execute(
+        update(ProjectSurveyData)
+        .where(ProjectSurveyData.project_id == project_id)
+        .values(responses=answers, survey_complete=True)
+    )
+    await db.commit()
+
+    return SuccessResponse(message="Anket başarıyla kaydedildi")
+
 @router.delete("/{project_id}", response_model=SuccessResponse)
 async def delete_project(project_id: UUID, current_user: CurrentUser, db: DBSession):
     """
     Belirtilen projeyi siler.
     DB seviyesinde CASCADE olduğundan anketler, mesajlar vb. her şey silinecek.
     """
-    result = await db.execute(
-        select(Project).where(
+    # Önce projenin bu kullanıcıya ait olduğunu doğrula
+    owner_check = await db.execute(
+        select(Project.id).where(
             Project.id == project_id,
             Project.user_id == current_user.id
         )
     )
-    project = result.scalar_one_or_none()
-    
-    if not project:
+    if owner_check.scalar_one_or_none() is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Proje bulunamadı veya silme yetkiniz yok"
         )
-        
-    await db.delete(project)
+
+    # SQL DELETE — ORM instance fetch etmeden direkt sil
+    await db.execute(
+        delete(Project).where(Project.id == project_id)
+    )
     await db.commit()
-    
+
     return SuccessResponse(message="Proje başarıyla silindi")

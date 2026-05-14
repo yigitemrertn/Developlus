@@ -48,6 +48,9 @@ dependencies = [
     "pypdf>=4.0.0",
     "aiofiles>=24.1.0",
 
+    # Agentic
+    "tavily-python>=0.3.3",
+
     # Utilities
     "tenacity>=8.3.0",
     "structlog>=24.2.0",

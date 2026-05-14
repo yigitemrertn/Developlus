@@ -93,7 +93,7 @@ services:
     image: ghcr.io/berriai/litellm:main-latest
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-developlus-litellm-master-key}
-      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
     volumes:
       - ./services/litellm/config.yaml:/app/config.yaml:ro
     ports:

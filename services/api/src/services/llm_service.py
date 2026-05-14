@@ -19,21 +19,29 @@ def get_llm_client() -> AsyncOpenAI:
 
 async def chat_completion(
     messages: List[dict],
-    model: str = None,
-    temperature: float = None,
-    max_tokens: int = None,
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    tools: Optional[List[dict]] = None,
+    tool_choice: Optional[str] = None,
 ) -> dict:
     """Tek seferlik (non-streaming) chat completion."""
     client = get_llm_client()
     start = time.monotonic()
 
-    response = await client.chat.completions.create(
-        model=model or settings.default_model,
-        messages=messages,
-        temperature=temperature or settings.default_temperature,
-        max_tokens=max_tokens or settings.default_max_tokens,
-        stream=False,
-    )
+    kwargs = {
+        "model": model or settings.default_model,
+        "messages": messages,
+        "temperature": temperature or settings.default_temperature,
+        "max_tokens": max_tokens or settings.default_max_tokens,
+        "stream": False,
+    }
+    if tools:
+        kwargs["tools"] = tools
+    if tool_choice:
+        kwargs["tool_choice"] = tool_choice
+
+    response = await client.chat.completions.create(**kwargs)
 
     latency_ms = int((time.monotonic() - start) * 1000)
     choice = response.choices[0]
@@ -46,25 +54,34 @@ async def chat_completion(
         "total_tokens": response.usage.total_tokens if response.usage else None,
         "latency_ms": latency_ms,
         "finish_reason": choice.finish_reason,
+        "tool_calls": choice.message.tool_calls if hasattr(choice.message, "tool_calls") else None,
     }
 
 
 async def chat_completion_stream(
     messages: List[dict],
-    model: str = None,
-    temperature: float = None,
-    max_tokens: int = None,
+    model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    tools: Optional[List[dict]] = None,
+    tool_choice: Optional[str] = None,
 ) -> AsyncGenerator[str, None]:
     """SSE streaming chat completion. Token token yield eder."""
     client = get_llm_client()
 
-    stream = await client.chat.completions.create(
-        model=model or settings.default_model,
-        messages=messages,
-        temperature=temperature or settings.default_temperature,
-        max_tokens=max_tokens or settings.default_max_tokens,
-        stream=True,
-    )
+    kwargs = {
+        "model": model or settings.default_model,
+        "messages": messages,
+        "temperature": temperature or settings.default_temperature,
+        "max_tokens": max_tokens or settings.default_max_tokens,
+        "stream": True,
+    }
+    if tools:
+        kwargs["tools"] = tools
+    if tool_choice:
+        kwargs["tool_choice"] = tool_choice
+
+    stream = await client.chat.completions.create(**kwargs)
 
     async for chunk in stream:
         if chunk.choices and chunk.choices[0].delta.content:

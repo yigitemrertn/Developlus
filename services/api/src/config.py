@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     # Dashscope (Qwen — direkt bağlantı için yedek)
     dashscope_api_key: str = ""
 
+    # Tavily Search API
+    tavily_api_key: str = ""
+
     # LLM defaults
     default_model: str = "qwen-turbo"
     default_temperature: float = 0.7

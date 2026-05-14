@@ -1,25 +1,20 @@
 model_list:
   - model_name: qwen-turbo
     litellm_params:
-      model: openai/qwen2.5-72b-instruct
-      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/DASHSCOPE_API_KEY
+      model: huggingface/Qwen/Qwen2.5-7B-Instruct
+      api_key: os.environ/HUGGINGFACE_API_KEY
       rpm: 60
-      tpm: 500000
 
   - model_name: qwen-fast
     litellm_params:
-      model: openai/qwen2.5-7b-instruct
-      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/DASHSCOPE_API_KEY
+      model: huggingface/Qwen/Qwen2.5-7B-Instruct
+      api_key: os.environ/HUGGINGFACE_API_KEY
       rpm: 100
-      tpm: 1000000
 
   - model_name: qwen-embedding
     litellm_params:
-      model: openai/text-embedding-v3
-      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/DASHSCOPE_API_KEY
+      model: huggingface/sentence-transformers/all-MiniLM-L6-v2
+      api_key: os.environ/HUGGINGFACE_API_KEY
 
 router_settings:
   routing_strategy: least-busy
