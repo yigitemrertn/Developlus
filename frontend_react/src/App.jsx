@@ -6,7 +6,6 @@ import SurveyView from './components/SurveyView';
 import AuthView from './components/AuthView';
 import ProjectsView from './components/ProjectsView';
 import SettingsView from './components/SettingsView';
-// import { mockProjects, mockChatHistory, mockStackRecommendations } from './data/mockData';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,7 +47,6 @@ export default function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Backend returns project_name, let's map it to 'name' for frontend compatibility
         const mapped = data.map(p => ({...p, name: p.project_name}));
         setProjects(mapped);
       }
@@ -61,7 +59,6 @@ export default function App() {
   const currentChatHistory = chatHistories[activeProjectId] || [];
   const currentStack = stackRecs[activeProjectId] || null;
 
-  // Proje seçildiğinde geçmişi çek
   useEffect(() => {
     if (activeProjectId && isAuthenticated) {
       fetchChatHistory(activeProjectId);
@@ -76,10 +73,9 @@ export default function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        // Backend 'message_content' dönüyor, 'content' olarak mapliyoruz
         const mapped = data.messages.map(m => ({
           ...m,
-          content: m.message_content
+          content: m.content || m.message_content || ''
         }));
         setChatHistories(prev => ({ ...prev, [projectId]: mapped }));
       }
@@ -91,16 +87,10 @@ export default function App() {
   const handleSendMessage = async (projectId, message) => {
     const token = localStorage.getItem('access_token');
     
-    // 1. Kullanıcı mesajını anında ekrana ekle
     const userMsg = { id: Date.now().toString(), role: 'user', content: message };
-    setChatHistories(prev => ({
-      ...prev,
-      [projectId]: [...(prev[projectId] || []), userMsg]
-    }));
-
-    // 2. Asistan için boş bir balon oluştur
     const assistantMsgId = (Date.now() + 1).toString();
     const assistantMsg = { id: assistantMsgId, role: 'assistant', content: '' };
+
     setChatHistories(prev => ({
       ...prev,
       [projectId]: [...(prev[projectId] || []), userMsg, assistantMsg]
@@ -135,7 +125,6 @@ export default function App() {
               const data = JSON.parse(line.slice(6));
               if (data.token) {
                 accumulatedContent += data.token;
-                // Ekranda güncelle
                 setChatHistories(prev => {
                   const history = [...(prev[projectId] || [])];
                   const lastIdx = history.findIndex(m => m.id === assistantMsgId);
@@ -145,12 +134,7 @@ export default function App() {
                   return { ...prev, [projectId]: history };
                 });
               }
-              if (data.done) {
-                console.log('Stream finished');
-              }
-            } catch (e) {
-              // JSON parse hatası olabilir, geç
-            }
+            } catch (e) {}
           }
         }
       }
@@ -160,7 +144,7 @@ export default function App() {
         const history = [...(prev[projectId] || [])];
         const lastIdx = history.findIndex(m => m.id === assistantMsgId);
         if (lastIdx !== -1) {
-          history[lastIdx] = { ...history[lastIdx], content: 'Üzgünüm, bir hata oluştu. Lütfen tekrar dene.' };
+          history[lastIdx] = { ...history[lastIdx], content: 'Hata oluştu, lütfen tekrar deneyin.' };
         }
         return { ...prev, [projectId]: history };
       });
@@ -197,7 +181,6 @@ export default function App() {
     
     try {
       if (activeProjectId) {
-        // Updating existing project survey
         const res = await fetch(`http://localhost:8000/projects/${activeProjectId}/survey`, {
           method: 'PUT',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -211,7 +194,6 @@ export default function App() {
           setActiveView('chat');
         }
       } else {
-        // Creating new project
         const createRes = await fetch('http://localhost:8000/projects', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -222,7 +204,6 @@ export default function App() {
           const newProjData = await createRes.json();
           const newId = newProjData.id;
           
-          // Now save survey
           const surveyRes = await fetch(`http://localhost:8000/projects/${newId}/survey`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -244,10 +225,8 @@ export default function App() {
 
   if (isInitializing) {
     return (
-      <div className="app-root app-layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="glow-orb glow-1" />
-        <div className="glow-orb glow-2" />
-        <div style={{ zIndex: 10, color: 'var(--text-secondary)' }}>Yükleniyor...</div>
+      <div className="app-root app-layout flex-center">
+        <div style={{ color: 'var(--text-secondary)' }}>Yükleniyor...</div>
       </div>
     );
   }

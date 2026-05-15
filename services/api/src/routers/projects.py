@@ -196,13 +196,15 @@ async def stream_project_chat(
             async for token in chat_service.stream_project_chat(
                 db=db,
                 project_id=project_id,
+                user_id=UUID(str(current_user.id)),
                 user_message=request.message,
-                extra_context=survey_context
+                survey_context=survey_context,
             ):
                 payload = json.dumps({"token": token}, ensure_ascii=False)
                 yield f"data: {payload}\n\n"
             yield f"data: {json.dumps({'done': True})}\n\n"
         except Exception as e:
+            print(f"[stream_project_chat endpoint] error: {e}")
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
     return StreamingResponse(

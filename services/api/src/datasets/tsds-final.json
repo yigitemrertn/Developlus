@@ -1,0 +1,847 @@
+[
+  {
+    "company_slug": "uber",
+    "company_name": "Uber",
+    "industry": "Transportation / Logistics",
+    "description": "Global ride-sharing and logistics platform.",
+    "stack_architecture": {
+      "frontend": [
+        "Backbone.js",
+        "Objective-C",
+        "Swift",
+        "jQuery",
+        "React"
+      ],
+      "backend": [
+        "Golang",
+        "Java",
+        "Node.js",
+        "Python"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "Apache Spark",
+        "Cassandra",
+        "Hadoop",
+        "MongoDB",
+        "MySQL",
+        "NGINX",
+        "PostgreSQL",
+        "Redis",
+        "Elasticsearch",
+        "Kafka",
+        "Zookeeper",
+        "Terraform"
+      ],
+      "ai_ml_layer": [
+        "TensorFlow"
+      ]
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "airbnb",
+    "company_name": "Airbnb",
+    "industry": "Travel / Hospitality",
+    "description": "Online marketplace for short-term homestays.",
+    "stack_architecture": {
+      "frontend": [
+        "JavaScript",
+        "Sass",
+        "React"
+      ],
+      "backend": [
+        "Java",
+        "Rails",
+        "Ruby"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "Amazon RDS",
+        "Amazon S3",
+        "Hadoop",
+        "MySQL",
+        "NGINX",
+        "Redis"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "facebook",
+    "company_name": "Facebook",
+    "industry": "Social Media",
+    "description": "Global social networking and communication platform.",
+    "stack_architecture": {
+      "frontend": [
+        "React"
+      ],
+      "backend": [
+        "GraphQL",
+        "PHP",
+        "Tornado"
+      ],
+      "infrastructure": [
+        "Cassandra",
+        "Memcached"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "pinterest",
+    "company_name": "Pinterest",
+    "industry": "Social Media",
+    "description": "Image sharing and visual discovery service.",
+    "stack_architecture": {
+      "frontend": [
+        "Backbone.js",
+        "Objective-C",
+        "React"
+      ],
+      "backend": [
+        "Django",
+        "Golang",
+        "Java",
+        "Python"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "Amazon S3",
+        "Docker",
+        "Hadoop",
+        "Memcached",
+        "MySQL",
+        "NGINX",
+        "Redis",
+        "Zookeeper"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "google",
+    "company_name": "Google",
+    "industry": "Technology / Search",
+    "description": "Multinational technology company focusing on search, ads, and cloud.",
+    "stack_architecture": {
+      "frontend": [
+        "Android SDK",
+        "AngularJS"
+      ],
+      "backend": [
+        "C++",
+        "Golang",
+        "Java",
+        "Python"
+      ],
+      "infrastructure": [
+        "Kubernetes"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "shopify",
+    "company_name": "Shopify",
+    "industry": "E-commerce",
+    "description": "E-commerce platform for online stores and retail point-of-sale systems.",
+    "stack_architecture": {
+      "frontend": [
+        "React Native",
+        "React"
+      ],
+      "backend": [
+        "Golang",
+        "GraphQL",
+        "Python",
+        "Rails",
+        "Ruby"
+      ],
+      "infrastructure": [
+        "Apache Spark",
+        "Docker",
+        "Hadoop",
+        "Kubernetes",
+        "Memcached",
+        "MySQL",
+        "NGINX",
+        "Redis",
+        "Elasticsearch",
+        "Kafka",
+        "Zookeeper"
+      ],
+      "ai_ml_layer": [
+        "pandas"
+      ]
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "netflix",
+    "company_name": "Netflix",
+    "industry": "Entertainment",
+    "description": "Global streaming media and video-on-demand platform.",
+    "stack_architecture": {
+      "frontend": [
+        "React"
+      ],
+      "backend": [
+        "Flask",
+        "Java",
+        "Node.js",
+        "Python"
+      ],
+      "infrastructure": [
+        "Amazon DynamoDB",
+        "Amazon EC2",
+        "Amazon RDS",
+        "Amazon S3",
+        "Cassandra",
+        "Hadoop",
+        "MySQL",
+        "PostgreSQL"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "instagram",
+    "company_name": "Instagram",
+    "industry": "Social Media",
+    "description": "Photo and video sharing social networking service.",
+    "stack_architecture": {
+      "frontend": [
+        "JavaScript",
+        "Objective-C",
+        "React Native",
+        "React"
+      ],
+      "backend": [
+        "Django",
+        "GraphQL",
+        "Java",
+        "Python"
+      ],
+      "infrastructure": [
+        "Cassandra",
+        "HAProxy",
+        "Memcached",
+        "NGINX",
+        "PostgreSQL",
+        "Redis"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "spotify",
+    "company_name": "Spotify",
+    "industry": "Music Streaming",
+    "description": "Audio streaming and media services provider.",
+    "stack_architecture": {
+      "frontend": [
+        "Bootstrap"
+      ],
+      "backend": [
+        "Java",
+        "Python"
+      ],
+      "infrastructure": [
+        "Amazon S3",
+        "Cassandra",
+        "Docker",
+        "Google BigQuery",
+        "Hadoop",
+        "NGINX",
+        "PostgreSQL",
+        "Kafka"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "amazon",
+    "company_name": "Amazon",
+    "industry": "E-commerce / Cloud",
+    "description": "Multinational technology company focusing on e-commerce, cloud computing.",
+    "stack_architecture": {
+      "frontend": [
+        "AngularJS",
+        "React"
+      ],
+      "backend": [
+        "Java"
+      ],
+      "infrastructure": [
+        "MySQL"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "twitter",
+    "company_name": "Twitter",
+    "industry": "Social Media",
+    "description": "Microblogging and social networking service.",
+    "stack_architecture": {
+      "frontend": [
+        "Bootstrap",
+        "jQuery",
+        "React"
+      ],
+      "backend": [
+        "ExpressJS",
+        "GraphQL",
+        "Node.js",
+        "Rails",
+        "Scala"
+      ],
+      "infrastructure": [
+        "Docker",
+        "Hadoop",
+        "HAProxy",
+        "Memcached",
+        "MySQL",
+        "Redis"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "udemy",
+    "company_name": "Udemy",
+    "industry": "Education",
+    "description": "Massive open online course (MOOC) provider.",
+    "stack_architecture": {
+      "frontend": [
+        "AngularJS",
+        "Bootstrap",
+        "HTML5",
+        "Kotlin",
+        "jQuery",
+        "React"
+      ],
+      "backend": [
+        "Django",
+        "Node.js",
+        "Python",
+        "Spring Boot"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "Amazon S3",
+        "AWS Lambda",
+        "Docker",
+        "Kubernetes",
+        "Memcached",
+        "MySQL",
+        "NGINX",
+        "Redis",
+        "Elasticsearch",
+        "Kafka",
+        "Terraform"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "launchdarkly",
+    "company_name": "LaunchDarkly",
+    "industry": "SaaS / DevOps",
+    "description": "Feature management platform for software teams.",
+    "stack_architecture": {
+      "frontend": [
+        "Foundation",
+        "JavaScript",
+        "React"
+      ],
+      "backend": [
+        "Golang"
+      ],
+      "infrastructure": [
+        "Amazon DynamoDB",
+        "Amazon EC2",
+        "Amazon RDS",
+        "HAProxy",
+        "MongoDB",
+        "PostgreSQL",
+        "Redis",
+        "Elasticsearch",
+        "Kafka",
+        "Terraform"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "instacart",
+    "company_name": "Instacart",
+    "industry": "Delivery / E-commerce",
+    "description": "Grocery delivery and pick-up service.",
+    "stack_architecture": {
+      "frontend": [
+        "Android SDK",
+        "Objective-C",
+        "React"
+      ],
+      "backend": [
+        "Python",
+        "Rails",
+        "Ruby"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "Amazon S3",
+        "Cassandra",
+        "Memcached",
+        "NGINX",
+        "PostgreSQL",
+        "Redis",
+        "Ubuntu",
+        "Elasticsearch",
+        "Terraform"
+      ],
+      "ai_ml_layer": [
+        "NumPy",
+        "Pandas",
+        "R Language"
+      ]
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "slack",
+    "company_name": "Slack",
+    "industry": "Communication",
+    "description": "Business communication platform.",
+    "stack_architecture": {
+      "frontend": [
+        "Android SDK",
+        "ES6",
+        "JavaScript",
+        "Kotlin",
+        "Objective-C",
+        "Swift",
+        "TypeScript",
+        "jQuery",
+        "React"
+      ],
+      "backend": [
+        "Golang",
+        "Java",
+        "Node.js",
+        "PHP"
+      ],
+      "infrastructure": [
+        "Apache Spark",
+        "Hadoop",
+        "Kubernetes",
+        "Memcached",
+        "MySQL",
+        "NGINX",
+        "Redis",
+        "Ubuntu",
+        "Elasticsearch",
+        "Kafka",
+        "Terraform"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "robinhood",
+    "company_name": "Robinhood",
+    "industry": "Finance",
+    "description": "Financial services company known for commission-free trades.",
+    "stack_architecture": {
+      "frontend": [
+        "Bootstrap",
+        "Kotlin",
+        "Sass",
+        "Swift",
+        "React"
+      ],
+      "backend": [
+        "Django",
+        "Golang",
+        "Python"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "Docker",
+        "Kubernetes",
+        "Memcached",
+        "NGINX",
+        "PostgreSQL",
+        "Redis",
+        "Ubuntu",
+        "Elasticsearch",
+        "Kafka",
+        "Zookeeper",
+        "Terraform"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "reddit",
+    "company_name": "reddit",
+    "industry": "Social Media",
+    "description": "Social news aggregation, web content rating, and discussion website.",
+    "stack_architecture": {
+      "frontend": [
+        "Backbone.js",
+        "HTML5",
+        "JavaScript",
+        "jQuery",
+        "React"
+      ],
+      "backend": [
+        "Flask",
+        "Node.js",
+        "Python"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "Amazon S3",
+        "Cassandra",
+        "HAProxy",
+        "Memcached",
+        "NGINX",
+        "PostgreSQL",
+        "Redis",
+        "Ubuntu"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "stripe",
+    "company_name": "Stripe",
+    "industry": "Finance / Payments",
+    "description": "Financial infrastructure platform for the internet.",
+    "stack_architecture": {
+      "frontend": [],
+      "backend": [
+        "Ruby"
+      ],
+      "infrastructure": [],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "linkedin",
+    "company_name": "LinkedIn",
+    "industry": "Social Media",
+    "description": "Business and employment-oriented online service.",
+    "stack_architecture": {
+      "frontend": [
+        "Backbone.js",
+        "Bootstrap",
+        "Ember.js",
+        "jQuery",
+        "React"
+      ],
+      "backend": [
+        "Java"
+      ],
+      "infrastructure": [
+        "Amazon S3",
+        "Hadoop",
+        "Memcached",
+        "MySQL",
+        "NGINX"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "twitch",
+    "company_name": "Twitch",
+    "industry": "Entertainment / Streaming",
+    "description": "Live streaming video platform.",
+    "stack_architecture": {
+      "frontend": [
+        "Ember.js"
+      ],
+      "backend": [
+        "C++",
+        "Golang",
+        "Rails",
+        "Ruby"
+      ],
+      "infrastructure": [
+        "Amazon EC2",
+        "NGINX",
+        "PostgreSQL",
+        "Terraform"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "cred",
+    "company_name": "CRED",
+    "industry": "Finance",
+    "description": "Reward-based credit card payments app.",
+    "stack_architecture": {
+      "frontend": [
+        "Android SDK",
+        "Flutter",
+        "HTML5",
+        "JavaScript",
+        "Kotlin",
+        "Swift",
+        "React"
+      ],
+      "backend": [
+        "Flask",
+        "Golang",
+        "Java",
+        "Node.js",
+        "Python",
+        "Spring Boot"
+      ],
+      "infrastructure": [
+        "Amazon DynamoDB",
+        "Amazon EC2",
+        "Amazon RDS",
+        "Amazon Redshift",
+        "Amazon S3",
+        "Apache Spark",
+        "AWS Lambda",
+        "Docker",
+        "MySQL",
+        "NGINX",
+        "PostgreSQL",
+        "Redis",
+        "Elasticsearch",
+        "Kafka"
+      ],
+      "ai_ml_layer": [
+        "Apache Flink"
+      ]
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "nubank",
+    "company_name": "Nubank",
+    "industry": "Finance / Banking",
+    "description": "Neobank and financial technology company.",
+    "stack_architecture": {
+      "frontend": [
+        "Flutter",
+        "Foundation"
+      ],
+      "backend": [
+        "Clojure",
+        "Python",
+        "Scala"
+      ],
+      "infrastructure": [
+        "Amazon DynamoDB",
+        "Amazon EC2",
+        "Amazon Redshift",
+        "Amazon S3",
+        "AWS Lambda",
+        "Docker",
+        "Kubernetes",
+        "Redis",
+        "Kafka"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "postman",
+    "company_name": "Postman",
+    "industry": "SaaS / API",
+    "description": "API platform for building and using APIs.",
+    "stack_architecture": {
+      "frontend": [
+        "Bootstrap"
+      ],
+      "backend": [],
+      "infrastructure": [
+        "NGINX"
+      ],
+      "ai_ml_layer": []
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  },
+  {
+    "company_slug": "delivery-hero",
+    "company_name": "Delivery Hero",
+    "industry": "Delivery",
+    "description": "Multinational online food-delivery service.",
+    "stack_architecture": {
+      "frontend": [
+        "Android SDK",
+        "AngularJS",
+        "Flutter",
+        "HTML5",
+        "JavaScript",
+        "Kotlin",
+        "Objective-C",
+        "React Native",
+        "Swift",
+        "React"
+      ],
+      "backend": [
+        "C#",
+        "Django",
+        "Golang",
+        "Java",
+        "Node.js",
+        "PHP",
+        "Python",
+        "Ruby",
+        "Scala",
+        "Tornado"
+      ],
+      "infrastructure": [
+        "Amazon DynamoDB",
+        "Amazon EC2",
+        "Amazon Redshift",
+        "Amazon S3",
+        "Apache Spark",
+        "AWS Lambda",
+        "Docker",
+        "Google BigQuery",
+        "Hadoop",
+        "Kubernetes",
+        "MongoDB",
+        "MySQL",
+        "PostgreSQL",
+        "Redis",
+        "Terraform"
+      ],
+      "ai_ml_layer": [
+        "Jupyter",
+        "Keras",
+        "Pandas",
+        "scikit-learn",
+        "TensorFlow",
+        "XGBoost",
+        "R Language"
+      ]
+    },
+    "metadata": {
+      "last_updated": "2024-Q2",
+      "source": "StackShare & Elite TSDS Dataset",
+      "reliability_score": 5
+    }
+  }
+]

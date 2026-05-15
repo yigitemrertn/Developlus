@@ -1,9 +1,9 @@
 """Developlus API — LLM Service (Qwen via LiteLLM Proxy)"""
 import time
-from typing import AsyncGenerator, List, Optional
+from typing import AsyncGenerator, List, Optional, cast
 
-import httpx
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, AsyncStream, NOT_GIVEN
+from openai.types.chat import ChatCompletionChunk
 
 from src.config import settings
 
@@ -29,19 +29,15 @@ async def chat_completion(
     client = get_llm_client()
     start = time.monotonic()
 
-    kwargs = {
-        "model": model or settings.default_model,
-        "messages": messages,
-        "temperature": temperature or settings.default_temperature,
-        "max_tokens": max_tokens or settings.default_max_tokens,
-        "stream": False,
-    }
-    if tools:
-        kwargs["tools"] = tools
-    if tool_choice:
-        kwargs["tool_choice"] = tool_choice
-
-    response = await client.chat.completions.create(**kwargs)
+    response = await client.chat.completions.create(  # type: ignore[call-overload]
+        model=model or settings.default_model,
+        messages=messages,  # type: ignore[arg-type]
+        temperature=temperature if temperature is not None else settings.default_temperature,
+        max_tokens=max_tokens or settings.default_max_tokens,
+        stream=False,
+        tools=tools if tools else NOT_GIVEN,  # type: ignore[arg-type]
+        tool_choice=tool_choice if tool_choice else NOT_GIVEN,  # type: ignore[arg-type]
+    )
 
     latency_ms = int((time.monotonic() - start) * 1000)
     choice = response.choices[0]
@@ -69,23 +65,24 @@ async def chat_completion_stream(
     """SSE streaming chat completion. Token token yield eder."""
     client = get_llm_client()
 
-    kwargs = {
-        "model": model or settings.default_model,
-        "messages": messages,
-        "temperature": temperature or settings.default_temperature,
-        "max_tokens": max_tokens or settings.default_max_tokens,
-        "stream": True,
-    }
-    if tools:
-        kwargs["tools"] = tools
-    if tool_choice:
-        kwargs["tool_choice"] = tool_choice
-
-    stream = await client.chat.completions.create(**kwargs)
+    # cast() ile Pylance'a dönüş tipini açıkça söylüyoruz.
+    # create(stream=True) runtime'da AsyncStream döndürüyor ama
+    # Pylance overload union'ı çözemediği için cast gerekiyor.
+    stream = cast(
+        AsyncStream[ChatCompletionChunk],
+        await client.chat.completions.create(  # type: ignore[call-overload]
+            model=model or settings.default_model,
+            messages=messages,  # type: ignore[arg-type]
+            temperature=temperature if temperature is not None else settings.default_temperature,
+            max_tokens=max_tokens or settings.default_max_tokens,
+            stream=True,
+        ),
+    )
 
     async for chunk in stream:
-        if chunk.choices and chunk.choices[0].delta.content:
-            yield chunk.choices[0].delta.content
+        content = chunk.choices[0].delta.content if chunk.choices else None
+        if content:
+            yield content
 
 
 async def create_embedding(text: str) -> List[float]:
@@ -95,17 +92,17 @@ async def create_embedding(text: str) -> List[float]:
         model="qwen-embedding",
         input=text,
     )
-    return response.data[0].embedding
+    return response.data[0].embedding  # type: ignore[return-value]
 
 
-async def build_messages(
+def build_messages(
     session_history: List[dict],
     user_message: str,
     system_prompt: Optional[str] = None,
     rag_context: Optional[str] = None,
 ) -> List[dict]:
     """Konuşma geçmişinden LLM mesaj listesi oluşturur."""
-    messages = []
+    messages: List[dict] = []
 
     # System prompt
     if system_prompt or rag_context:
@@ -116,7 +113,7 @@ async def build_messages(
     else:
         messages.append({
             "role": "system",
-            "content": "Sen Developlus AI asistanısın. Yardımcı, nazik ve bilgili bir yapay zeka asistanısın."
+            "content": "Sen Developlus AI asistanısın. Yardımcı, nazik ve bilgili bir yapay zeka asistanısın.",
         })
 
     # Geçmiş mesajlar (son 20 mesaj)
