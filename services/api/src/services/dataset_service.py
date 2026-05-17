@@ -1,4 +1,4 @@
-﻿"""Developlus API - Dataset Service
+"""Developlus API - Dataset Service
 
 TSDS (Tech Stack Dataset) ve TDS (Technology Dataset) verilerini yukler
 ve kullanicinin sorgu + anket verilerine gore ilgili parcalari bulur.
@@ -10,6 +10,10 @@ Dosyalar:
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from sqlalchemy import select
+from src.database import AsyncSessionLocal
+from src.models import DocumentChunk
+from src.services import llm_service
 
 # ─── Dataset Yukleme ─────────────────────────────────────────────────────────
 
@@ -104,7 +108,6 @@ def search_company_stacks(
 ) -> List[Dict[str, Any]]:
     """
     Kullanicinin sorusu + anket verilerine gore benzer sirket stacklerini bulur.
-    Skor = keyword eslesmesi + endustri eslesmesi
     """
     combined_text = query + " " + (survey_context or "")
     query_keywords = set(_extract_keywords(combined_text))
@@ -116,21 +119,18 @@ def search_company_stacks(
         industry = company.get("industry", "").lower()
         stack = company.get("stack_architecture", {})
 
-        # Tum stack teknolojilerini duz listeye cevir
         all_techs: set = set()
         for layer_techs in stack.values():
             if isinstance(layer_techs, list):
                 for t in layer_techs:
                     all_techs.add(str(t).lower())
 
-        # Keyword eslesmesi
         for kw in query_keywords:
             if any(kw in tech for tech in all_techs):
                 score += 2
             if kw in industry:
                 score += 3
 
-        # Endustri eslesmesi
         for ind in query_industries:
             if ind in industry:
                 score += 4
@@ -142,6 +142,27 @@ def search_company_stacks(
     return [c for _, c in scored[:max_results]]
 
 
+async def vector_search(
+    query: str,
+    limit: int = 5,
+) -> List[str]:
+    """
+    pgvector kullanarak benzer doküman parçalarını bulur.
+    """
+    try:
+        query_embedding = await llm_service.create_embedding(query)
+        async with AsyncSessionLocal() as db:
+            stmt = select(DocumentChunk.chunk_text).order_by(
+                DocumentChunk.embedding.cosine_distance(query_embedding)
+            ).limit(limit)
+            
+            result = await db.execute(stmt)
+            return [str(row) for row in result.scalars().all()]
+    except Exception as e:
+        print(f"[dataset_service] Vector search error: {e}")
+        return []
+
+
 # ─── Arac Profili Arama ───────────────────────────────────────────────────────
 
 def search_tool_profiles(
@@ -150,7 +171,6 @@ def search_tool_profiles(
 ) -> List[Dict[str, Any]]:
     """
     Kullanicinin sorusuna gore alakali arac profillerini bulur.
-    tds-prefinal.json dan verisi dolu kayitlari doner.
     """
     query_keywords = set(_extract_keywords(query))
     query_lower = query.lower()
@@ -165,12 +185,10 @@ def search_tool_profiles(
         criteria = tool.get("matching_criteria", {})
         best_for = [str(b).lower() for b in (criteria.get("best_for", []) if isinstance(criteria, dict) else [])]
 
-        # Veri dolu mu kontrolu
         has_data = bool(description) or bool(tags) or bool(best_for)
         if not has_data:
             continue
 
-        # Eslesme skoru
         score = 0
         if slug in query_lower or display_name in query_lower:
             score += 10
@@ -193,17 +211,21 @@ def search_tool_profiles(
 
 # ─── Context Builder ─────────────────────────────────────────────────────────
 
-def build_dataset_context(
+async def build_dataset_context(
     query: str,
     survey_context: Optional[str] = None,
 ) -> Optional[str]:
     """
     Soru + anket verilerine gore veri setlerinden bir RAG context metni olusturur.
-    Hicbir sey bulunamazsa None doner (Tavily fallback icin sinyal).
     """
     parts: List[str] = []
 
-    # 1. Benzer sirket stackleri
+    # 1. Vektör Arama (RAG)
+    vector_results = await vector_search(query, limit=5)
+    if vector_results:
+        parts.append("## İlgili Teknik Bilgiler (Vektör Veritabanı)\n" + "\n".join(f"- {r}" for r in vector_results))
+
+    # 2. Benzer sirket stackleri
     companies = search_company_stacks(query, survey_context, max_results=4)
     if companies:
         company_section = "## Gercek Dunya Sirket Stack Ornekleri\n"
@@ -223,30 +245,17 @@ def build_dataset_context(
             )
         parts.append(company_section)
 
-    # 2. Ilgili arac profilleri (yalnizca verisi doluysa)
+    # 3. Ilgili arac profilleri
     tools = search_tool_profiles(query, max_results=6)
     if tools:
         tool_section = "## Ilgili Teknoloji Profilleri\n"
         for t in tools:
             intel = t.get("core_intel", {}) or {}
-            criteria = t.get("matching_criteria", {}) or {}
             desc = intel.get("description", "") if isinstance(intel, dict) else ""
-            tags = intel.get("tags", []) if isinstance(intel, dict) else []
-            best_for = criteria.get("best_for", []) if isinstance(criteria, dict) else []
-            learning = criteria.get("learning_curve", "") if isinstance(criteria, dict) else ""
-            scalability = criteria.get("scalability_tier", "") if isinstance(criteria, dict) else ""
-
+            
             tool_section += f"\n### {t.get('display_name')} (`{t.get('slug')}`)\n"
             if desc:
                 tool_section += f"{desc}\n"
-            if tags:
-                tool_section += f"- **Etiketler:** {', '.join(str(x) for x in tags)}\n"
-            if best_for:
-                tool_section += f"- **En iyi oldugu yer:** {', '.join(str(x) for x in best_for)}\n"
-            if learning:
-                tool_section += f"- **Ogrenme egrisi:** {learning}\n"
-            if scalability:
-                tool_section += f"- **Olceklenebilirlik:** {scalability}\n"
         parts.append(tool_section)
 
     if not parts:

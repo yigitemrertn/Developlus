@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Tavily Search API
     tavily_api_key: str = ""
 
+    # HuggingFace API Key
+    huggingface_api_key: str = ""
+
     # LLM defaults
     default_model: str = "qwen-turbo"
     default_temperature: float = 0.7

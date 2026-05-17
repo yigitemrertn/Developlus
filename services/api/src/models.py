@@ -7,14 +7,15 @@ Python tarafında da ON DELETE CASCADE mantığını yansıtır.
 """
 import uuid
 from datetime import datetime
+from typing import List, Optional, Dict, Any
 
-from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
-    Boolean, Column, DateTime, Float, ForeignKey,
-    Integer, String, Text, UniqueConstraint, func
+    Column, Integer, String, Text, DateTime, ForeignKey, 
+    Boolean, Float, UniqueConstraint, func
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from src.database import Base
 
@@ -257,18 +258,18 @@ class Document(Base):
     """
     __tablename__ = "documents"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id     = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    filename    = Column(String(500), nullable=False)
-    file_type   = Column(String(50))               # 'pdf', 'txt', 'md' vb.
-    file_size   = Column(Integer)                  # Bayt cinsinden boyut
-    chunk_count = Column(Integer, default=0)       # Oluşturulan chunk sayısı
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_type: Mapped[Optional[str]] = mapped_column(String(50))               # 'pdf', 'txt', 'md' vb.
+    file_size: Mapped[Optional[int]] = mapped_column(Integer)                  # Bayt cinsinden boyut
+    chunk_count: Mapped[int] = mapped_column(Integer, default=0)       # Oluşturulan chunk sayısı
     # Celery pipeline durumu; işlem adımları bu sütunla izlenir
-    status      = Column(String(20), default="pending")
-    created_at  = Column(DateTime(timezone=True), server_default=func.now())
-    doc_metadata = Column("metadata", JSONB, default=dict)  # Yazar, sayfa sayısı, kaynak URL vb.
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    doc_metadata: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)  # Yazar, sayfa sayısı, kaynak URL vb.
 
-    user   = relationship("User", back_populates="documents")
+    user = relationship("User", back_populates="documents")
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
 
 
@@ -276,19 +277,19 @@ class DocumentChunk(Base):
     """
     Belge parçaları + pgvector embedding.
     HNSW indeksi cosine similarity ile ANN araması yapar (init.sql'de tanımlı).
-    embedding boyutu 1536: text-embedding-v3 / ada-002 uyumlu.
+    embedding boyutu 384: MiniLM-L6 (384)
     """
     __tablename__ = "document_chunks"
 
-    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
-    user_id     = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    chunk_index = Column(Integer, nullable=False)   # Belge içindeki sıra numarası (0-based)
-    chunk_text  = Column(Text, nullable=False)      # Ham metin parçası
-    embedding   = Column(Vector(1536))             # Vektör temsili; HNSW ile aranır
-    token_count = Column(Integer)                  # Context penceresi yönetimi için token sayısı
-    created_at  = Column(DateTime(timezone=True), server_default=func.now())
-    chunk_metadata = Column("metadata", JSONB, default=dict)  # Sayfa no, başlık, kaynak bölüm vb.
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)   # Belge içindeki sıra numarası (0-based)
+    chunk_text: Mapped[str] = mapped_column(Text, nullable=False)      # Ham metin parçası
+    embedding = mapped_column(Vector(384))              # MiniLM-L6 (384)
+    token_count: Mapped[Optional[int]] = mapped_column(Integer)                  # Context penceresi yönetimi için token sayısı
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    chunk_metadata: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)  # Sayfa no, başlık, kaynak bölüm vb.
 
     document = relationship("Document", back_populates="chunks")
 

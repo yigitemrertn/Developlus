@@ -71,3 +71,23 @@ export async function sendChatMessage(message) {
     }, 800);
   });
 }
+
+export async function getLatestStack(projectId) {
+  if (API_URL) {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${API_URL}/projects/${projectId}/stack`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error('Stack API hatası');
+      return await res.json();
+    } catch (err) {
+      console.error('Stack fetching failed:', err);
+      return null;
+    }
+  }
+  return null;
+}

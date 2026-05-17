@@ -9,10 +9,10 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import selectinload
 
 from src.dependencies import CurrentUser, DBSession
-from src.models import Project, ProjectSurveyData, ChatHistory
+from src.models import Project, ProjectSurveyData, ChatHistory, StackRecommendation
 from src.schemas import (
     ProjectCreate, ProjectResponse, SuccessResponse,
-    ProjectChatRequest, ChatHistoryListResponse
+    ProjectChatRequest, ChatHistoryListResponse, StackRecommendationResponse
 )
 from src.services import chat_service
 
@@ -212,3 +212,30 @@ async def stream_project_chat(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
     )
+
+
+@router.get("/{project_id}/stack", response_model=StackRecommendationResponse)
+async def get_latest_stack(project_id: UUID, current_user: CurrentUser, db: DBSession):
+    """Projenin en güncel stack önerisini döner."""
+    # Sahiplik kontrolü
+    owner_check = await db.execute(
+        select(Project.id).where(
+            Project.id == project_id,
+            Project.user_id == current_user.id
+        )
+    )
+    if owner_check.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Proje bulunamadı")
+
+    result = await db.execute(
+        select(StackRecommendation)
+        .where(StackRecommendation.project_id == project_id)
+        .order_by(StackRecommendation.version.desc())
+        .limit(1)
+    )
+    stack = result.scalar_one_or_none()
+    if not stack:
+        # Eğer hiç stack yoksa boş bir response dönelim veya 404
+        raise HTTPException(status_code=404, detail="Bu proje için henüz bir stack önerisi oluşturulmamış.")
+    
+    return stack

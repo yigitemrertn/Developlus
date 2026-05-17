@@ -6,6 +6,7 @@ import SurveyView from './components/SurveyView';
 import AuthView from './components/AuthView';
 import ProjectsView from './components/ProjectsView';
 import SettingsView from './components/SettingsView';
+import { getLatestStack } from './api/analyzeApi';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -62,8 +63,20 @@ export default function App() {
   useEffect(() => {
     if (activeProjectId && isAuthenticated) {
       fetchChatHistory(activeProjectId);
+      fetchStackRec(activeProjectId);
     }
   }, [activeProjectId, isAuthenticated]);
+
+  const fetchStackRec = async (projectId) => {
+    try {
+      const data = await getLatestStack(projectId);
+      if (data) {
+        setStackRecs(prev => ({ ...prev, [projectId]: data }));
+      }
+    } catch (e) {
+      console.error('Stack fetch error:', e);
+    }
+  };
 
   const fetchChatHistory = async (projectId) => {
     const token = localStorage.getItem('access_token');
@@ -133,6 +146,10 @@ export default function App() {
                   }
                   return { ...prev, [projectId]: history };
                 });
+              }
+              // Chat bittiyse stack'i yenile (belki yeni bir öneri geldi)
+              if (data.done) {
+                fetchStackRec(projectId);
               }
             } catch (e) {}
           }
@@ -267,7 +284,7 @@ export default function App() {
           ) : (
             <StackView 
               project={activeProject} 
-              recommendations={currentStack} 
+              recommendation={currentStack} 
             />
           )
         ) : activeView === 'survey' ? (

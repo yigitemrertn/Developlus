@@ -15,7 +15,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import ChatHistory
+from src.models import ChatHistory, StackRecommendation, Project
 from src.services import dataset_service, llm_service, tavily_service
 
 
@@ -81,7 +81,7 @@ async def stream_project_chat(
     is_greeting = _check_if_greeting(user_message)
     
     if not is_greeting:
-        dataset_context = dataset_service.build_dataset_context(
+        dataset_context = await dataset_service.build_dataset_context(
             query=user_message,
             survey_context=survey_context,
         )
@@ -122,6 +122,41 @@ async def stream_project_chat(
     if search_sources:
         full_response += search_sources
         yield search_sources
+
+    # ── 4. Stack Recommendation Guncelleme Kontrolu ─────────────────────────
+    # Eğer yanıtta <stack_update> etiketi varsa, veritabanını güncelle
+    if "<stack_update>" in full_response:
+        try:
+            # Tag içindeki JSON'u parse et
+            import re
+            match = re.search(r"<stack_update>(.*?)</stack_update>", full_response, re.DOTALL)
+            if match:
+                stack_json = json.loads(match.group(1))
+                
+                # Mevcut versiyonu bul
+                v_res = await db.execute(
+                    select(StackRecommendation.version)
+                    .where(StackRecommendation.project_id == project_id)
+                    .order_by(StackRecommendation.version.desc())
+                    .limit(1)
+                )
+                last_version = v_res.scalar() or 0
+                
+                new_stack = StackRecommendation(
+                    project_id=project_id,
+                    version=last_version + 1,
+                    frontend_content=stack_json.get("frontend"),
+                    backend_content=stack_json.get("backend"),
+                    database_content=stack_json.get("database"),
+                    devops_content=stack_json.get("devops"),
+                    generated_from={"user_query": user_message}
+                )
+                db.add(new_stack)
+                
+                # Yanıt metninden etiketi temizle (kullanıcıya ham JSON gösterme)
+                full_response = re.sub(r"<stack_update>.*?</stack_update>", "", full_response, flags=re.DOTALL).strip()
+        except Exception as e:
+            print(f"[chat_service] Stack update error: {e}")
 
     latency_ms = int((time.monotonic() - start) * 1000)
     assistant_msg = ChatHistory(
@@ -171,10 +206,22 @@ def _build_system_prompt(survey_context: str, rag_method: str, is_greeting: bool
         "Görevin: kullanıcının projesine özel, uygulanabilir, GERÇEKÇİ ve minimalist bir teknoloji yığını önermek.\n\n"
         "## KRİTİK KURALLAR\n"
         "- DİL: Sadece TÜRKÇE yanıt ver. Asla İngilizce veya Çince karakterler/açıklamalar kullanma.\n"
+        "- KOD ÜRETİMİ YASAK: Asla kod bloğu (```python, ```javascript vb.) yazma. Sadece mimari ve teknoloji anlat.\n"
         "- ÖLÇEKLENEBİLİRLİK: Eğer proje 'basit' veya 'küçük' ise, devasa frameworkler (Java Spring Boot, .NET Enterprise vb.) önerme.\n"
         "- BASİT PROJELER İÇİN: Python (Flask/FastAPI), Node.js (Express) veya hatta sadece HTML/JS + Firebase/SQLite gibi hafif çözümlere odaklan.\n"
         "- HALÜSİNASYON: Bilmediğin şirketlerin (Spotify, Twitch vb.) teknolojileri hakkında uydurma yapma.\n"
         "- ANKET VERİSİ: Kullanıcının bütçesi ve ekibi kısıtlıysa Azure/AWS gibi pahalı servisler yerine ücretsiz/ucuz alternatifleri (Heroku free tier, Render, Vercel) öner.\n"
+        "\n## STACK GÜNCELLEME (ZORUNLU)\n"
+        "Eğer konuşma akışında bir teknoloji kararı kesinleşirse veya yeni bir stack önerisi yapıyorsan, yanıtın EN SONUNA mutlaka şu formatta bir blok ekle:\n"
+        "<stack_update>\n"
+        "{\n"
+        '  "frontend": "Frontend teknolojisi ve kısa gerekçesi",\n'
+        '  "backend": "Backend teknolojisi ve kısa gerekçesi",\n'
+        '  "database": "Veritabanı seçimi ve kısa gerekçesi",\n'
+        '  "devops": "Dağıtım/Altyapı seçimi ve kısa gerekçesi"\n'
+        "}\n"
+        "</stack_update>\n"
+        "Bu etiket içindeki bilgiler veritabanına otomatik kaydedilecektir.\n"
     )
 
     if is_greeting:
