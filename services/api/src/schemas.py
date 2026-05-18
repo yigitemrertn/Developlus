@@ -236,16 +236,13 @@ class ChatHistoryListResponse(BaseModel):
 
 class StackRecommendationResponse(BaseModel):
     """
-    Stack sekmesindeki 4 kutunun içeriği.
+    Stack sekmesindeki dinamik katmanların veri kaynağı.
     version alanı geçmiş versiyonlar arasında gezinmek için kullanılır.
     """
     id: UUID
     project_id: UUID
     version: int                     # 1, 2, 3 ... en yüksek = güncel öneri
-    frontend_content: Optional[str]  # Frontend kutusu
-    backend_content: Optional[str]   # Backend kutusu
-    database_content: Optional[str]  # Database kutusu
-    devops_content: Optional[str]    # DevOps kutusu
+    layers: Optional[dict] = None    # Dinamik katmanlar: {"Frontend": "React", "AI Layer": "PyTorch"}
     generated_from: Optional[dict]   # Hangi survey yanıtlarından üretildi
     created_at: datetime
 

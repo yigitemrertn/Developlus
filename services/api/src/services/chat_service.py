@@ -41,6 +41,7 @@ async def get_project_messages(
             "created_at": r.created_at.isoformat() if r.created_at else None,
             "latency_ms": r.latency_ms,
             "model_used": getattr(r, "model_used", None),
+            "total_tokens": getattr(r, "total_tokens", None),
         }
         for r in rows
     ]
@@ -115,9 +116,52 @@ async def stream_project_chat(
     full_response = ""
     start = time.monotonic()
 
+    buffer = ""
+    hide_output = False
+
     async for token in llm_service.chat_completion_stream(messages=llm_messages):
         full_response += token
-        yield token
+        buffer += token
+        
+        while True:
+            if not hide_output:
+                start_idx = buffer.find("<stack_update>")
+                if start_idx != -1:
+                    if start_idx > 0:
+                        yield buffer[:start_idx]
+                    buffer = buffer[start_idx + len("<stack_update>"):]
+                    hide_output = True
+                    continue
+                else:
+                    tag = "<stack_update>"
+                    safe_to_yield_idx = len(buffer)
+                    for i in range(1, len(tag)):
+                        if buffer.endswith(tag[:i]):
+                            safe_to_yield_idx = len(buffer) - i
+                            break
+                    if safe_to_yield_idx > 0:
+                        yield buffer[:safe_to_yield_idx]
+                        buffer = buffer[safe_to_yield_idx:]
+                    break
+            else:
+                end_idx = buffer.find("</stack_update>")
+                if end_idx != -1:
+                    buffer = buffer[end_idx + len("</stack_update>"):]
+                    hide_output = False
+                    continue
+                else:
+                    tag = "</stack_update>"
+                    safe_to_discard_idx = len(buffer)
+                    for i in range(1, len(tag)):
+                        if buffer.endswith(tag[:i]):
+                            safe_to_discard_idx = len(buffer) - i
+                            break
+                    if safe_to_discard_idx > 0:
+                        buffer = buffer[safe_to_discard_idx:]
+                    break
+
+    if buffer and not hide_output:
+        yield buffer
 
     if search_sources:
         full_response += search_sources
@@ -131,7 +175,16 @@ async def stream_project_chat(
             import re
             match = re.search(r"<stack_update>(.*?)</stack_update>", full_response, re.DOTALL)
             if match:
-                stack_json = json.loads(match.group(1))
+                stack_text = match.group(1).strip()
+                
+                # Sadece JSON kısmını almak için ilk '{' ve son '}' arasını bul
+                start_idx = stack_text.find('{')
+                end_idx = stack_text.rfind('}')
+                
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    stack_text = stack_text[start_idx:end_idx+1]
+                
+                stack_json = json.loads(stack_text)
                 
                 # Mevcut versiyonu bul
                 v_res = await db.execute(
@@ -145,10 +198,7 @@ async def stream_project_chat(
                 new_stack = StackRecommendation(
                     project_id=project_id,
                     version=last_version + 1,
-                    frontend_content=stack_json.get("frontend"),
-                    backend_content=stack_json.get("backend"),
-                    database_content=stack_json.get("database"),
-                    devops_content=stack_json.get("devops"),
+                    layers=stack_json,
                     generated_from={"user_query": user_message}
                 )
                 db.add(new_stack)
@@ -201,28 +251,31 @@ def _build_system_prompt(survey_context: str, rag_method: str, is_greeting: bool
     """
     LLM icin kapsamli sistem promptu olusturur.
     """
-    prompt = (
-        "Sen Developlus platformunun kıdemli yazılım mimarı AI danışmanısın. "
-        "Görevin: kullanıcının projesine özel, uygulanabilir, GERÇEKÇİ ve minimalist bir teknoloji yığını önermek.\n\n"
-        "## KRİTİK KURALLAR\n"
-        "- DİL: Sadece TÜRKÇE yanıt ver. Asla İngilizce veya Çince karakterler/açıklamalar kullanma.\n"
-        "- KOD ÜRETİMİ YASAK: Asla kod bloğu (```python, ```javascript vb.) yazma. Sadece mimari ve teknoloji anlat.\n"
-        "- ÖLÇEKLENEBİLİRLİK: Eğer proje 'basit' veya 'küçük' ise, devasa frameworkler (Java Spring Boot, .NET Enterprise vb.) önerme.\n"
-        "- BASİT PROJELER İÇİN: Python (Flask/FastAPI), Node.js (Express) veya hatta sadece HTML/JS + Firebase/SQLite gibi hafif çözümlere odaklan.\n"
-        "- HALÜSİNASYON: Bilmediğin şirketlerin (Spotify, Twitch vb.) teknolojileri hakkında uydurma yapma.\n"
-        "- ANKET VERİSİ: Kullanıcının bütçesi ve ekibi kısıtlıysa Azure/AWS gibi pahalı servisler yerine ücretsiz/ucuz alternatifleri (Heroku free tier, Render, Vercel) öner.\n"
-        "\n## STACK GÜNCELLEME (ZORUNLU)\n"
-        "Eğer konuşma akışında bir teknoloji kararı kesinleşirse veya yeni bir stack önerisi yapıyorsan, yanıtın EN SONUNA mutlaka şu formatta bir blok ekle:\n"
-        "<stack_update>\n"
-        "{\n"
-        '  "frontend": "Frontend teknolojisi ve kısa gerekçesi",\n'
-        '  "backend": "Backend teknolojisi ve kısa gerekçesi",\n'
-        '  "database": "Veritabanı seçimi ve kısa gerekçesi",\n'
-        '  "devops": "Dağıtım/Altyapı seçimi ve kısa gerekçesi"\n'
-        "}\n"
-        "</stack_update>\n"
-        "Bu etiket içindeki bilgiler veritabanına otomatik kaydedilecektir.\n"
-    )
+    prompt = """
+    # ROLE: SENIOR SOLUTIONS ARCHITECT (DEVELOPLUS AI)
+Sen Developlus platformunun kıdemli yazılım mimarı AI danışmanısın. Görevin, kullanıcının girdilerine göre minimalist, gerçekçi ve uygulanabilir teknoloji yığınları (tech stack) önermek ve mevcut stack durumunu yönetmektir.
+
+# OPERATIONAL LOGIC:
+Her kullanıcı girdisinde şu 4 adımlı iç mekanizmayı çalıştır:
+1. SCAN: Kullanıcının mesajını, bütçesini, ekip seviyesini ve proje ölçeğini analiz et.
+2. EVALUATE: Küçük projeler için devasa frameworkler (Java Spring, .NET Enterprise, AWS/Azure) önerme. Hafif çözümlere (Python FastAPI/Flask, Node.js, Firebase, Supabase, Render, Vercel) odaklan.
+3. UPDATE: Teknik durumu her zaman arka planda güncelle.
+4. RESPOND: Sadece TÜRKÇE yanıt ver. Yanıtın net, doğrudan ve lafı uzatmayan (no-bullshit) bir üslupta olsun. Asla gerçek yazılım kodu (python, js satırları) üretme.
+
+# OUTPUT FORMAT (STRICT):
+SADECE kullanıcı doğrudan bir mimari veya teknoloji kararı sorduğunda, stack'i güncellemeni istediğinde veya yeni bir stack oluşturduğunda yanıtın EN SONUNA mutlaka şu formatta bir blok ekle. Normal sohbetlerde, genel teknik sorularda veya selamlaşmalarda bu bloğu ASLA KULLANMA. Bu bloğu eklediğinde, projeye en uygun katman (layer) başlıklarını KENDİN BELİRLE. Standart Frontend/Backend başlıklarına bağlı kalmak zorunda değilsin. Örneğin bir veri bilimi projesi için "Data Ingestion", "Model Training", "Serving" gibi başlıklar kullanabilirsin. Bir mobil oyun için "Client", "Game Server", "Matchmaking" kullanabilirsin. Sadece anahtar-değer (STRING-STRING) içeren DÜZ (nested olmayan) bir JSON üret:
+
+---CONVERSATION---
+[Buraya kullanıcıya vereceğin doğal, net ve uzman mimari yanıtı yaz.]
+
+<stack_update>
+{
+  "Senin_Belirledigin_Katman_Adı_1": "Seçilen teknoloji ve kısa açıklama",
+  "Senin_Belirledigin_Katman_Adı_2": "Seçilen teknoloji ve kısa açıklama",
+  "Senin_Belirledigin_Katman_Adı_3": "Seçilen teknoloji ve kısa açıklama"
+}
+</stack_update>
+    """
 
     if is_greeting:
         prompt += (

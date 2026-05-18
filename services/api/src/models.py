@@ -182,11 +182,8 @@ class StackRecommendation(Base):
                               nullable=False)
     # Versiyon numarası: 1, 2, 3 ... her yeni öneri +1 artar
     version          = Column(Integer, nullable=False, default=1)
-    # ── 4 Ana Kutu ─────────────────────────────────────────────────────────
-    frontend_content = Column(Text)    # Framework, kütüphane ve rationale
-    backend_content  = Column(Text)    # API framework, dil ve mimari
-    database_content = Column(Text)    # Primary/secondary DB seçimi + gerekçe
-    devops_content   = Column(Text)    # CI/CD, container, cloud provider
+    # ── Dinamik Katmanlar ──────────────────────────────────────────────────
+    layers           = Column(JSONB, default=dict)
     # Öneriyi üreten survey_responses'ın anlık kopyası; geriye dönük analiz için
     generated_from   = Column(JSONB, default=dict)
     created_at       = Column(DateTime(timezone=True), server_default=func.now())
