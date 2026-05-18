@@ -190,14 +190,8 @@ CREATE TABLE IF NOT EXISTS stack_recommendations (
     project_id        UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     -- Versiyon numarası: 1, 2, 3 ... her yeni öneri +1 artar
     version           INTEGER NOT NULL DEFAULT 1,
-    -- Frontend kutusu: framework, kütüphane ve rationale içeren metin
-    frontend_content  TEXT,
-    -- Backend kutusu: API framework, dil ve mimari açıklaması
-    backend_content   TEXT,
-    -- Database kutusu: primary ve secondary DB seçimleri + gerekçe
-    database_content  TEXT,
-    -- DevOps kutusu: CI/CD araçları, container, cloud provider önerisi
-    devops_content    TEXT,
+    -- Dinamik Katmanlar: {"Frontend": "...", "Backend": "..."} vb.
+    layers            JSONB DEFAULT '{}',
     -- Hangi anket yanıtlarının tetiklediğini izleme için snapshot
     generated_from    JSONB DEFAULT '{}',   -- Öneriyi üreten survey_responses snapshotu
     created_at        TIMESTAMPTZ DEFAULT NOW(),  -- Öneri üretim zamanı

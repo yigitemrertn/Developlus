@@ -5,14 +5,14 @@ from tavily import AsyncTavilyClient
 from src.config import settings
 
 # Initialize client using the key from config
-tavily_client = AsyncTavilyClient(api_key=settings.tavily_api_key)
+tavily_client = AsyncTavilyClient(api_key=settings.tavily_api_key) if settings.tavily_api_key else None
 
 async def search_web(query: str, max_results: int = 3) -> str:
     """
     Tavily kullanarak internette arama yapar.
     RAG sistemi için metin formatında sonuç döner.
     """
-    if not settings.tavily_api_key:
+    if not tavily_client:
         return "Arama motoru aktif değil (API anahtarı eksik)."
         
     try:
